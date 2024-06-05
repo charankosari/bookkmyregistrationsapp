@@ -1,44 +1,152 @@
-import React, { useState } from 'react';
-import { View, KeyboardAvoidingView, TextInput, StyleSheet, Text, TouchableWithoutFeedback, TouchableOpacity, Keyboard, Platform } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState } from "react";
+import {
+  View,
+  KeyboardAvoidingView,
+  TextInput,
+  Text,
+  TouchableWithoutFeedback,
+  TouchableOpacity,
+  Keyboard,
+  Platform,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
+const RegisterScreen = ({navigation}) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [loading, setLoading] = useState(false);
 
-const KeyboardAwareScrollViewComponent = () => {
-  const [showPassword, setShowPassword] = useState(false); // State to track password visibility
-  const navigation = useNavigation();
+  const handleRegister = async () => {
+    if (!name || !email || !phoneNumber) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
 
-  // Function to toggle password visibility
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
+    setLoading(true);
+
+    try {
+      const response = await fetch("https://server.bookmyappointments.in/api/bma/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, number: phoneNumber }),
+      });
+
+      const data = await response.json();
+
+      if (response.status === 200) {
+        navigation.navigate("Otp", { number: data.number });
+      } else {
+        console.log(data)
+        Alert.alert("Error", data.error || "Registration failed");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to register, please try again");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}>
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#ffffff",
+      }}
+    >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.inner}>
-          <Text style={styles.header}>Register </Text>
-          <View style={styles.inputContainer}>
-            <TextInput placeholder="Name" style={styles.textInput} />
-            <TextInput placeholder="Email" style={styles.textInput} />
-            <TextInput placeholder="Phone Number" keyboardType="phone-pad" style={styles.textInput} />
-            <View style={styles.passwordContainer}>
-              <TextInput
-                placeholder="Password"
-                textContentType='oneTimeCode'
-                secureTextEntry={!showPassword} // Toggle secureTextEntry based on showPassword state
-                style={[styles.textInput, { width: '100%' }]}
-              />
-              <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
-                <Feather name={showPassword ? "eye-off" : "eye"} size={24} color="black" />
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity onPress={() => navigation.replace('Otp')} style={styles.registerButton}>
-              <Text style={styles.buttonText}>Register</Text>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            width: "80%",
+          }}
+        >
+          <Text style={{ fontSize: 36, marginBottom: 24 }}>Register </Text>
+          <View style={{ width: "100%", marginBottom: 24 }}>
+            <TextInput
+              placeholder="Name"
+              style={{
+                height: 40,
+                borderColor: "#ccc",
+                borderBottomWidth: 1,
+                marginBottom: 12,
+                paddingHorizontal: 8,
+                fontSize: 16,
+              }}
+              value={name}
+              onChangeText={setName}
+              editable={!loading}
+            />
+            <TextInput
+              placeholder="Email"
+              style={{
+                height: 40,
+                borderColor: "#ccc",
+                borderBottomWidth: 1,
+                marginBottom: 12,
+                paddingHorizontal: 8,
+                fontSize: 16,
+              }}
+              value={email}
+              onChangeText={setEmail}
+              editable={!loading}
+            />
+            <TextInput
+              placeholder="Phone Number"
+              keyboardType="phone-pad"
+              style={{
+                height: 40,
+                borderColor: "#ccc",
+                borderBottomWidth: 1,
+                marginBottom: 12,
+                paddingHorizontal: 8,
+                fontSize: 16,
+              }}
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              editable={!loading}
+            />
+            <TouchableOpacity
+              onPress={handleRegister}
+              style={{
+                backgroundColor: loading ? "#ccc" : "#4CAF50",
+                paddingVertical: 12,
+                paddingHorizontal: 12,
+                borderRadius: 4,
+                alignItems: "center",
+              }}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "bold" }}>
+                  Send OTP
+                </Text>
+              )}
             </TouchableOpacity>
-            <Text style={styles.signInText}>
-              Already have an account? <Text onPress={() => navigation.replace('Login')} style={styles.signInLink}>Sign In</Text>
+            <Text
+              style={{
+                marginTop: 24,
+                fontSize: 16,
+                marginBottom: 24,
+                textAlign: "center",
+              }}
+            >
+              Already have an account?{" "}
+              <Text
+                onPress={() => navigation.push("Login")}
+                style={{ color: "#4CAF50", textDecorationLine: "underline" }}
+              >
+                Sign In
+              </Text>
             </Text>
           </View>
         </View>
@@ -47,65 +155,4 @@ const KeyboardAwareScrollViewComponent = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-  },
-  inner: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '80%',
-  },
-  header: {
-    fontSize: 36,
-    marginBottom: 24,
-  },
-  inputContainer: {
-    width: '100%',
-    marginBottom: 24,
-  },
-  textInput: {
-    height: 40,
-    borderColor: '#ccc',
-    borderBottomWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 8,
-    fontSize: 16,
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 12,
-  },
-  registerButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  signInText: {
-    marginTop: 24,
-    fontSize: 16,
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  signInLink: {
-    color: '#4CAF50',
-    textDecorationLine: 'underline',
-  },
-});
-
-export default KeyboardAwareScrollViewComponent;
+export default RegisterScreen;

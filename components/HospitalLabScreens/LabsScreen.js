@@ -4,17 +4,15 @@ import {
   Text,
   TextInput,
   Image,
-  StyleSheet,
   TouchableOpacity,
   SafeAreaView,
   FlatList,
   Modal,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 import * as Location from "expo-location";
 import { Entypo } from "@expo/vector-icons";
-export default function App() {
+export default function App({navigation}) {
   const labs = [
     {
       labName: "Sunrise Diagnostics",
@@ -162,7 +160,6 @@ export default function App() {
     getLocationPermission();
   }, []);
 
-  const navigation = useNavigation();
   const [searchText, setSearchText] = useState("");
   const [locationPermission, setLocationPermission] = useState(null);
   const [city, setCity] = useState(null);
@@ -241,17 +238,52 @@ export default function App() {
         navigation.navigate("LabCategories", { lab });
       }}
     >
-      <View style={styles.hospitalContainer}>
-        <Image source={{ uri: lab.image }} style={styles.image} />
-        <View style={styles.textContainer}>
-          <Text style={styles.hospitalName}>{lab.labName}</Text>
-          <Text style={styles.areaName}>{lab.areaName}</Text>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          backgroundColor: "#f0f0f0",
+          borderRadius: 10,
+          marginHorizontal: 10,
+          padding: 10,
+          marginBottom: 10,
+        }}
+      >
+        <Image
+          source={{ uri: lab.image }}
+          style={{ width: 90, height: 90, borderRadius: 10, marginRight: 10 }}
+        />
+        <View style={{ flex: 1, marginLeft: 20 }}>
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "bold",
+              marginBottom: 5,
+            }}
+          >
+            {lab.labName}
+          </Text>
+          <Text
+            style={{
+              fontSize: 16,
+              color: "gray",
+            }}
+          >
+            {lab.areaName}
+          </Text>
         </View>
       </View>
     </TouchableOpacity>
   );
   return (
-    <View style={styles.container}>
+    <View
+      style={{
+        flex: 1,
+        paddingHorizontal: 10,
+        marginVertical: 5,
+        backgroundColor: "#fff",
+      }}
+    >
       <View
         style={{
           display: "flex",
@@ -260,16 +292,28 @@ export default function App() {
           gap: 10,
         }}
       >
-        <View style={styles.searchContainer}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            borderWidth: 1,
+            borderColor: "#ccc",
+            borderRadius: 10,
+            paddingHorizontal: 10,
+            marginLeft: 10,
+            marginRight: 10,
+            marginBottom: 10,
+          }}
+        >
           <TextInput
-            style={styles.searchInputt}
+            style={{ flex: 1, paddingVertical: 10 }}
             placeholder="Search"
             onChangeText={handleSearch}
             value={searchQuery}
           />
           <TouchableOpacity onPress={handleSearchSubmit}>
             <AntDesign
-              style={styles.searchIcon}
+              style={{ marginRight: 10 }}
               name="search1"
               size={20}
               color="#888"
@@ -300,17 +344,47 @@ export default function App() {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <SafeAreaView
+          style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 10,
+              paddingVertical: 10,
+              borderBottomWidth: 1,
+              borderBottomColor: "#ccc",
+            }}
+          >
             <TextInput
-              style={styles.searchInput}
+              style={{
+                flex: 1,
+                height: 40,
+                marginLeft: 20,
+                marginRight: 20,
+                borderColor: "#ccc",
+                borderWidth: 1,
+                borderRadius: 20,
+                paddingHorizontal: 15,
+                marginRight: 10,
+                color: "#333",
+              }}
               placeholder="Search..."
               placeholderTextColor="#666"
               onChangeText={(text) => setSearchText(text)}
               value={searchText}
             />
             <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={styles.closeButton}>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "bold",
+                  color: "#333",
+                  marginRight: 20,
+                }}
+              >
                 <Entypo name="cross" size={26} color="#333" />
               </Text>
             </TouchableOpacity>
@@ -321,10 +395,25 @@ export default function App() {
             keyExtractor={(item, index) => index.toString()}
             renderItem={({ item, index }) => (
               <TouchableOpacity
-                style={styles.customOptionBox}
+                style={{
+                  flexDirection: "row",
+                  marginLeft: 20,
+                  marginRight: 20,
+                  alignItems: "center",
+                  paddingVertical: 10,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#e5e5e5",
+                }}
                 onPress={() => handleOptionPress(item)}
               >
-                <Text style={styles.customCategoryName}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "bold",
+                    color: "#333",
+                    flex: 1,
+                  }}
+                >
                   {index === 0
                     ? item + " (Your current Location)"
                     : item.name
@@ -346,105 +435,3 @@ export default function App() {
     </View>
   );
 }
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 10,
-    marginVertical: 5,
-    backgroundColor: "#fff",
-  },
-  hospitalContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f0f0f0",
-    borderRadius: 10,
-    marginHorizontal: 10,
-    padding: 10,
-    marginBottom: 10,
-  },
-  image: {
-    width: 90,
-    height: 90,
-    borderRadius: 10,
-    marginRight: 10,
-  },
-  textContainer: {
-    flex: 1,
-    marginLeft: 20,
-  },
-  hospitalName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  areaName: {
-    fontSize: 16,
-    color: "gray",
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    marginLeft: 10,
-    marginRight: 10,
-    marginBottom: 10,
-  },
-  searchInputt: {
-    flex: 1,
-    paddingVertical: 10,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  //modal styles
-  modalContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    marginLeft: 20,
-    marginRight: 20,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    marginRight: 10,
-    color: "#333",
-  },
-  closeButton: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginRight: 20,
-  },
-  customCategoryName: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
-    flex: 1,
-  },
-  customOptionBox: {
-    flexDirection: "row",
-    marginLeft: 20,
-    marginRight: 20,
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e5e5",
-  },
-});

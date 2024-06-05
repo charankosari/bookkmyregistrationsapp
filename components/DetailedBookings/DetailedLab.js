@@ -3,16 +3,14 @@ import {
   View,
   Text,
   TextInput,
-  Button,
   Image,
   SafeAreaView,
   Linking,
   Platform,
-  StyleSheet,
+  ScrollView,
   TouchableOpacity,
 } from "react-native";
-import MapView, { Marker } from "react-native-maps";
-
+import { WebView } from 'react-native-webview';
 export default function DetailedHospitalBooking({ route, navigation }) {
   const { selectedDate, selectedTime, doctorDetails, lab } = route.params;
   const [coupon, setCoupon] = useState("");
@@ -21,14 +19,22 @@ export default function DetailedHospitalBooking({ route, navigation }) {
 
   const handleCheckout = () => {
     // Implement checkout logic here
-    navigation.navigate('Booking Confirmed')
+    navigation.navigate("Booking Confirmed");
   };
   const handleOptionViewPress = () => {
     const url = `https://www.google.com/maps/search/?api=1&query=${lab.latitude},${lab.longitude}`;
     Linking.openURL(url);
   };
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        padding: 20,
+        paddingTop: Platform.OS === "android" ? 60 : 30,
+        marginHorizontal: 20,
+      }}
+    >
+           <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
       <View
         style={{
           backgroundColor: "#d9d9d9",
@@ -48,16 +54,14 @@ export default function DetailedHospitalBooking({ route, navigation }) {
         />
         <View
           style={{
-            ...styles.section,
+            marginBottom: 20,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             marginLeft: 30,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: 800 }}>
-            {lab.labName}
-          </Text>
+          <Text style={{ fontSize: 16, fontWeight: 800 }}>{lab.labName}</Text>
           <Text style={{ fontSize: 14, fontWeight: 700 }}>
             {doctorDetails.name}
           </Text>
@@ -66,7 +70,7 @@ export default function DetailedHospitalBooking({ route, navigation }) {
           </Text>
         </View>
       </View>
-      <View style={{ ...styles.section, marginTop: 10 }}>
+      <View style={{ marginBottom: 20, marginTop: 10 }}>
         <Text>Booking date and time</Text>
         <Text style={{ fontSize: 12, fontWeight: "300" }}>
           Date:
@@ -81,11 +85,26 @@ export default function DetailedHospitalBooking({ route, navigation }) {
           </Text>
         </Text>
       </View>
-      <View style={styles.section}>
-        <View style={styles.section}>
-          <View style={styles.inputSection}>
+      <View style={{ marginBottom: 20 }}>
+        <View style={{ marginBottom: 20 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              borderWidth: 1,
+              padding: 5,
+              borderRadius: 5,
+              borderColor: "#d7d7d7",
+              alignItems: "center",
+            }}
+          >
             <TextInput
-              style={styles.input}
+              style={{
+                flex: 1,
+                borderColor: "#ccc",
+                borderRadius: 5,
+                paddingHorizontal: 10,
+                marginRight: 10,
+              }}
               placeholder="Enter coupon code"
               value={coupon}
               onChangeText={setCoupon}
@@ -104,7 +123,7 @@ export default function DetailedHospitalBooking({ route, navigation }) {
           </View>
         </View>
       </View>
-      <View style={styles.section}>
+      <View style={{ marginBottom: 20 }}>
         <Text
           style={{ fontSize: 18, marginTop: 5, fontWeight: 600, width: "100%" }}
         >
@@ -117,38 +136,102 @@ export default function DetailedHospitalBooking({ route, navigation }) {
             paddingBottom: 10,
           }}
         >
-          <Text style={styles.heading}>Billing Details</Text>
-          <View style={styles.billingRow}>
-            <Text style={styles.billingItem}>Consultancy Fee:</Text>
-            <Text style={styles.billingValue}>₹150</Text>
+          <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 5 }}>
+            Billing Details
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginBottom: 5,
+            }}
+          >
+            <Text style={{ fontSize: 16 }}>Consultancy Fee:</Text>
+            <Text style={{ fontSize: 16, fontWeight: "bold" }}>₹150</Text>
           </View>
-          <View style={styles.billingRow}>
-            <Text style={styles.billingItem}>Service Fee:</Text>
-            <Text style={styles.billingValue}>₹100</Text>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginBottom: 5,
+            }}
+          >
+            <Text style={{ fontSize: 16 }}>Service Fee:</Text>
+            <Text style={{ fontSize: 16, fontWeight: "bold" }}>₹100</Text>
           </View>
         </View>
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total amount:</Text>
-          <Text style={styles.totalValue}>₹250</Text>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginTop: 10,
+          }}
+        >
+          <Text style={{ fontSize: 18, fontWeight: "bold" }}>
+            Total amount:
+          </Text>
+          <Text style={{ fontSize: 18, fontWeight: "bold", color: "#2BB673" }}>
+            ₹250
+          </Text>
         </View>
       </View>
       <View>
-        <MapView
-          style={{ width: "100%", height: 200 }}
-          initialRegion={{
-            latitude: lab.latitude,
-            longitude: lab.longitude,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
-          }}
-          mapType="default"
-        >
-          <Marker
-            coordinate={{ latitude: lab.latitude, longitude: lab.longitude }}
-            title="Marker Title"
-            description="Marker Description"
+      <View style={{ height: 200, marginBottom: 20 }}>
+          <WebView
+            originWhitelist={['*']}
+            source={{
+              html: `
+                <!DOCTYPE html>
+                <html>
+                  <head>
+                    <title>Bookmyappointments</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+                    <style>
+                      #map {
+                        height: 100%;
+                        width: 100%;
+                      }
+                      html, body {
+                        height: 100%;
+                        margin: 0;
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <div id="map"></div>
+                    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+                    <script>
+                      var map = L.map('map').setView([${lab.latitude}, ${lab.longitude}], 13);
+                      L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: ''
+                      }).addTo(map);
+                      L.marker([${lab.latitude}, ${lab.longitude}]).addTo(map)
+                        .bindPopup('${lab.labName}')
+                        .openPopup();
+                    </script>
+                  </body>
+                </html>
+              `,
+            }}
+            style={{ width: "100%", height: "100%" }}
           />
-        </MapView>
+          <TouchableOpacity
+            style={{
+              position: "absolute",
+              right: 0,
+              top: 0,
+              alignSelf: "center",
+              padding: 10,
+              backgroundColor: "#2BB673",
+              borderRadius: 5,
+              margin: 3,
+            }}
+            onPress={handleOptionViewPress}
+          >
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>View </Text>
+          </TouchableOpacity>
+          </View>
         <TouchableOpacity
           style={{
             position: "absolute",
@@ -172,77 +255,24 @@ export default function DetailedHospitalBooking({ route, navigation }) {
           alignItems: "center",
         }}
       >
-        <View
-          style={{
-            ...styles.section,
-            backgroundColor: "#2BB673",
-            marginTop: 10,
-            borderRadius: 5,
-            width: 150,
-          }}
-        >
-          <Button title="Checkout" onPress={handleCheckout} color="#fff" />
-        </View>
+        <TouchableOpacity
+            style={{
+              marginBottom: 20,
+              backgroundColor: "#2BB673",
+              marginTop: 10,
+              borderRadius: 5,
+              padding:10,
+              justifyContent:'center',
+              display:'flex',
+              width: 150,
+            }}
+            onPress={handleCheckout}
+          >
+             
+            <Text style={{color:'#fff', marginLeft:"20%",}}> CheckOut</Text>
+          </TouchableOpacity>
       </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    paddingTop: Platform.OS === "android" ? 60 : 30,
-    marginHorizontal: 20,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  heading: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-
-  billingRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 5,
-  },
-  billingItem: {
-    fontSize: 16,
-  },
-  billingValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  totalRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-  },
-  totalLabel: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  totalValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#2BB673",
-  },
-  inputSection: {
-    flexDirection: "row",
-    borderWidth: 1,
-    padding: 5,
-    borderRadius: 5,
-    borderColor: "#d7d7d7",
-    alignItems: "center",
-  },
-  input: {
-    flex: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginRight: 10,
-  },
-});

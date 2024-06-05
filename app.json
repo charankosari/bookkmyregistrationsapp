@@ -19,8 +19,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/logoall.png",
+        "backgroundColor": "#000"
       },
       "package": "com.bookmyappointments"
     },

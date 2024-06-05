@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   Image,
   TouchableOpacity,
   Platform,
@@ -73,8 +72,14 @@ const LabDetailScreen = ({ navigation, route }) => {
     setFilteredDoctors(filtered);
   };
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>{lab.labName} </Text>
+    <SafeAreaView style={{  flex: 1,
+      backgroundColor: "#fff",
+      paddingHorizontal: 20,
+      paddingTop: Platform.OS === "android" ? 40 : 20,}}>
+      <Text style={{ fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 10,
+    paddingLeft: 20,}}>{lab.labName} </Text>
       <TextInput
         style={{
           width: "auto",
@@ -93,7 +98,10 @@ const LabDetailScreen = ({ navigation, route }) => {
       />
       <ScrollView>
         <View>
-          <View style={styles.optionsContainer}>
+          <View style={{   flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 5,
+    display: "flex",}}>
             <View style={{ width: "100%", height: "100%" }}>
               <Text style={{marginLeft:20,marginBottom:10,fontSize:14,fontWeight:'500'}}>Selected Category : {option.categoryName}</Text>
               {(searchText ? filteredDoctors : doctors)
@@ -200,88 +208,5 @@ const LabDetailScreen = ({ navigation, route }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === "android" ? 40 : 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 10,
-    paddingLeft: 20,
-  },
-  optionsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 5,
-    display: "flex",
-  },
-  modalContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-
-  customOptionBox: {
-    flexDirection: "row",
-    marginLeft: 20,
-    marginRight: 20,
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e5e5",
-  },
-  customImageContainer: {
-    marginRight: 10,
-  },
-  customImage: {
-    width: 40,
-    height: 40,
-    resizeMode: "contain",
-  },
-  customCategoryName: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    marginLeft: 20,
-    marginRight: 20,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    marginRight: 10,
-    color: "#333",
-  },
-  closeButton: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginRight: 20,
-  },
-
-
-  plusText: {
-    fontSize: 20,
-    color: "#333",
-    paddingTop: 5,
-  },
-});
 
 export default LabDetailScreen;

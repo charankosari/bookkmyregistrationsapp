@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   Platform,
   SafeAreaView,
@@ -10,111 +9,109 @@ import {
 } from "react-native";
 import HospitalScreen from "../HospitalLabScreens/HospitalScreen";
 import LabsScreen from "../HospitalLabScreens/LabsScreen";
-const HomeScreen = () => {
+import { useRoute } from "@react-navigation/native";
+const HomeScreen = ({navigation}) => {
+  const route=useRoute();
+  const {user}=route.params;
   const [selectedCategory, setSelectedCategory] = useState("hospitals");
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
   };
+
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={{ fontSize: 16, fontWeight: "600" }}>Hi User</Text>
-      </View>
-      <ScrollView
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: "#fff",
+        paddingTop: Platform.OS === "android" ? 40 : 20,
+      }}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingHorizontal: 20,
+          marginBottom: 20,
+        }}
       >
-        <View style={styles.categoryContainer}>
+        <Text style={{ fontSize: 16, fontWeight: "600" }}>Hi {user.name} </Text>
+      </View>
+      <ScrollView>
+        <View
+          style={{
+            flexDirection: "row",
+            paddingHorizontal: 20,
+            marginBottom: 20,
+          }}
+        >
           <TouchableOpacity
-            style={[
-              styles.categoryButton,
-              { borderLeftWidth: 1 },
-              selectedCategory === "hospitals" && styles.activeCategory,
-              styles.leftButton,
-            ]}
+            style={{
+              flex: 1,
+              borderRadius: 10,
+              borderBottomWidth: 1,
+              borderTopWidth: 1,
+              borderColor: "#ccc",
+              justifyContent: "center",
+              alignItems: "center",
+              paddingVertical: 10,
+              borderLeftWidth: 1,
+              backgroundColor:
+                selectedCategory === "hospitals" ? "#2BB673" : "transparent",
+              borderTopRightRadius: selectedCategory === "hospitals" ? 0 : 10,
+              borderBottomRightRadius:
+                selectedCategory === "hospitals" ? 0 : 10,
+            }}
             onPress={() => handleCategorySelect("hospitals")}
           >
             <Text
-              style={[
-                styles.categoryText,
-                selectedCategory === "hospitals" && styles.activeText,
-              ]}
+              style={{
+                fontSize: 16,
+                fontWeight: "500",
+                color: selectedCategory === "hospitals" ? "#fff" : "#000",
+              }}
             >
               Hospitals
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.categoryButton,
-              { borderRightWidth: 1 },
-              selectedCategory === "labs" && styles.activeCategory,
-              styles.rightButton,
-            ]}
+            style={{
+              flex: 1,
+              borderRadius:10,
+              borderBottomWidth: 1,
+              borderTopWidth: 1,
+              borderColor: "#ccc",
+              justifyContent: "center",
+              alignItems: "center",
+              paddingVertical: 10,
+              borderRightWidth: 1,
+              backgroundColor:selectedCategory === "labs" ? "#2BB673" : "transparent",
+              borderTopLeftRadius: selectedCategory === "labs" ? 0 : 10,
+              borderBottomLeftRadius: selectedCategory === "labs" ? 0 : 10,
+            }}
             onPress={() => handleCategorySelect("labs")}
           >
             <Text
-              style={[
-                styles.categoryText,
-                selectedCategory === "labs" && styles.activeText,
-              ]}
+              style={{
+                fontSize: 16,
+                fontWeight: "500",
+                color: selectedCategory === "labs" ? "#fff" : "#000",
+              }}
             >
               Labs
             </Text>
           </TouchableOpacity>
         </View>
-        {selectedCategory === "hospitals" ? <HospitalScreen /> : <LabsScreen />}
+          {selectedCategory === "hospitals" ? (
+          <HospitalScreen navigation={navigation} />
+        ) : (
+          <LabsScreen navigation={navigation} />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 };
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    paddingTop: Platform.OS === 'android' ? 40 : 20,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  setLocationButton: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  categoryContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  categoryButton: {
-    flex: 1,
-    borderRadius: 10,
-    borderBottomWidth: 1,
-    borderTopWidth: 1,
-    borderColor: "#ccc",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 10,
-  },
-  leftButton: {
-    borderTopRightRadius: 0,
-    borderBottomRightRadius: 0,
-  },
-  rightButton: {
-    borderTopLeftRadius: 0,
-    borderBottomLeftRadius: 0,
-  },
-  categoryText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  activeCategory: {
-    backgroundColor: "#2BB673",
-  },
-  activeText: {
-    color: "#fff",
-  },
-});
 
 export default HomeScreen;
+  

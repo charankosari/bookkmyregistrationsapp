@@ -12,7 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const OtpScreen = ({navigation}) => {
   const route = useRoute();
-  const { number } = route.params;
+  const { userId } = route.params;
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const otpInputs = Array.from({ length: 4 }, () => useRef(null));
@@ -51,8 +51,8 @@ const OtpScreen = ({navigation}) => {
   const handleVerifyNow = async () => {
     setLoading(true);
     const otpNumber = Number(otp.join(""));
-    const url = "https://server.bookmyappointments.in/api/bma/verifyregisterotp";
-    const payload = { number, otp: otpNumber };
+    const url = "https://server.bookmyappointments.in/api/bma/verifyotp";
+    const payload = { userid: userId, otp: otpNumber };
 
     try {
       const response = await fetch(url, {
@@ -71,7 +71,7 @@ const OtpScreen = ({navigation}) => {
       if (responseData.success) {
         await AsyncStorage.setItem("jwtToken", responseData.jwtToken);
         console.log(responseData.jwtToken);
-        navigation.push("HomeScreen");
+        navigation.navigate("HomeScreen");
       } else {
         Alert.alert("Error", responseData.message || "Invalid response from server");
       }

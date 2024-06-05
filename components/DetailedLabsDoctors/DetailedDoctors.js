@@ -6,18 +6,16 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   Platform,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import DoctorPng from "../../assets/doctor.png";
 import moment from "moment";
-import { useNavigation } from "@react-navigation/native";
-const DetailedDoctors = ({ route }) => {
+const DetailedDoctors = ({ route ,navigation}) => {
   const [weekDates, setWeekDates] = useState([]);
   const [selectedDay, setSelectedDay] = useState(null);
 
-  const { doctor,hospital } = route.params;
+  const { doctor, hospital } = route.params;
   const [selectedRating, setSelectedRating] = useState(null);
   const ratings = [
     { id: 1, name: "Nikitha Apte", rating: "⭐⭐⭐", comment: "Great doctor!" },
@@ -41,17 +39,16 @@ const DetailedDoctors = ({ route }) => {
       rating: "⭐⭐⭐⭐",
       comment: "Very knowledgeable.",
     },
-    
   ];
 
   useEffect(() => {
     const getWeekDates = () => {
-      const today = moment(); 
+      const today = moment();
       const endOfWeek = moment(today).add(6, "days");
-  
+
       const dates = [];
       let currentDate = moment(today);
-  
+
       while (currentDate.isSameOrBefore(endOfWeek, "day")) {
         dates.push({
           day: currentDate.format("dddd"),
@@ -59,13 +56,13 @@ const DetailedDoctors = ({ route }) => {
         });
         currentDate.add(1, "day");
       }
-  
+
       setWeekDates(dates);
     };
-  
+
     getWeekDates();
   }, []);
-  
+
   useEffect(() => {
     if (weekDates.length > 0) {
       setSelectedDay(weekDates[0]);
@@ -85,8 +82,6 @@ const DetailedDoctors = ({ route }) => {
   const handleTimePress = (time) => {
     setSelectedTime(time);
   };
-
-  
 
   const handleRatingPress = (rating) => {
     setSelectedRating(rating);
@@ -108,9 +103,9 @@ const DetailedDoctors = ({ route }) => {
               alignItems: "center",
               marginHorizontal: 5,
               backgroundColor:
-              selectedTime && selectedTime.id === time.id
-                ? "#2BB673"
-                : "#D9D9D9",
+                selectedTime && selectedTime.id === time.id
+                  ? "#2BB673"
+                  : "#D9D9D9",
               padding: 5,
               borderRadius: 5,
             }}
@@ -120,7 +115,9 @@ const DetailedDoctors = ({ route }) => {
               style={{
                 fontSize: 16,
                 color:
-                selectedTime && selectedTime.id === time.id ? "white" : "black",
+                  selectedTime && selectedTime.id === time.id
+                    ? "white"
+                    : "black",
               }}
             >
               {time.time}
@@ -173,30 +170,56 @@ const DetailedDoctors = ({ route }) => {
       </ScrollView>
     );
   };
-  const navigation = useNavigation();
 
   const handleBookNow = () => {
     navigation.navigate("DetailedHospitalBooking", {
       selectedDate: selectedDay.date,
       selectedTime: selectedTime.time,
       doctorDetails: doctor,
-      hospital
+      hospital,
     });
   };
-  
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: "#fff",
+        paddingTop: Platform.OS === "android" ? 40 : 20,
+      }}
+    >
       <ScrollView>
-        <View style={styles.content}>
-          <Image source={DoctorPng} style={styles.image} />
-          <Text style={styles.name}>{doctor.name}</Text>
-          <Text style={styles.text}>{doctor.study}</Text>
+        <View
+          style={{
+            alignItems: "center",
+            padding: 5,
+            backgroundColor: "#f0f0f0",
+            borderRadius: 10,
+            margin: 20,
+          }}
+        >
+          <Image
+            source={DoctorPng}
+            style={{
+              width: 100,
+              height: 100,
+              borderRadius: 50,
+              marginBottom: 10,
+            }}
+          />
+          <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>
+            {doctor.name}
+          </Text>
+          <Text style={{ fontSize: 18, marginBottom: 10 }}>{doctor.study}</Text>
           <FontAwesome
             name={doctor.favourite ? "heart" : "heart-o"}
-            style={[
-              styles.heartIcon,
-              { color: doctor.favourite ? "red" : "gray" },
-            ]}
+            style={{
+              fontSize: 24,
+              position: "absolute",
+              top: 20,
+              right: 20,
+              color: doctor.favourite ? "red" : "gray",
+            }}
           />
         </View>
         <Text style={{ fontSize: 18, paddingLeft: 20, fontWeight: "500" }}>
@@ -242,63 +265,26 @@ const DetailedDoctors = ({ route }) => {
           ))}
         </ScrollView>
         <WeekDetails weekDates={weekDates} />
-        <TimeDetails times={times}/>
-        <TouchableOpacity onPress={handleBookNow} style={styles.bookNowButton}>
-  <Text style={styles.bookNowText}>Book Now</Text>
-</TouchableOpacity>
+        <TimeDetails times={times} />
+        <TouchableOpacity
+          onPress={handleBookNow}
+          style={{
+            alignItems: "center",
+            backgroundColor: "#2BB673",
+            width: "40%",
+            padding: 10,
+            borderRadius: 5,
+            marginTop: 20,
+            marginLeft: 27,
+          }}
+        >
+          <Text style={{ color: "white", fontSize: 18, fontWeight: "bold" }}>
+            Book Now
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    paddingTop: Platform.OS === 'android' ? 40 : 20,
-  },
-  bookNowButton: {
-    alignItems: "center",
-    backgroundColor: "#2BB673",
-    width:'40%',
-    padding: 10,
-    borderRadius: 5,
-    marginTop:20,
-    marginLeft:27
-  },
-  bookNowText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  content: {
-    alignItems: "center",
-    padding: 5,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 10,
-    margin: 20,
-  },
-  image: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 10,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  text: {
-    fontSize: 18,
-    marginBottom: 10,
-  },
-  heartIcon: {
-    fontSize: 24,
-    position: "absolute",
-    top: 20,
-    right: 20,
-  },
-});
 
 export default DetailedDoctors;
