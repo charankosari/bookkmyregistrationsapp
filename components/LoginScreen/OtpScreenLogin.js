@@ -71,7 +71,7 @@ const OtpScreen = ({navigation}) => {
       if (responseData.success) {
         await AsyncStorage.setItem("jwtToken", responseData.jwtToken);
         console.log(responseData.jwtToken);
-        navigation.navigate("HomeScreen");
+        navigation.replace("HomeScreen");
       } else {
         Alert.alert("Error", responseData.message || "Invalid response from server");
       }

@@ -19,7 +19,7 @@ export default function DetailedHospitalBooking({ route, navigation }) {
 
   const handleCheckout = () => {
     // Implement checkout logic here
-    navigation.navigate("Booking Confirmed");
+    navigation.replace("Booking Confirmed");
   };
   const handleOptionViewPress = () => {
     const url = `https://www.google.com/maps/search/?api=1&query=${lab.latitude},${lab.longitude}`;

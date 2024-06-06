@@ -107,7 +107,8 @@ export default function App({navigation}) {
           });
 
           if (address && address.length > 0) {
-            setCity(address[0].city);
+            setCity(address[0].district);
+            console.log(address[0])
           }
         } catch (error) {
           console.error("Error getting location:", error);

@@ -63,15 +63,6 @@ const SettingsScreen = ({ navigation }) => {
             gap: 20,
           }}
         >
-          <Image
-            source={profileImage ? { uri: profileImage } : Default}
-            style={{
-              width: 100,
-              height: 100,
-              resizeMode: "cover",
-              borderRadius: 50,
-            }}
-          />
           <View
             style={{
               alignItems: "center",

@@ -37,7 +37,7 @@ const RegisterScreen = ({navigation}) => {
       const data = await response.json();
 
       if (response.status === 200) {
-        navigation.navigate("Otp", { number: data.number });
+        navigation.replace("Otp", { number: data.number });
       } else {
         console.log(data)
         Alert.alert("Error", data.error || "Registration failed");

@@ -31,10 +31,8 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   useEffect(() => {
-    // Prevent the splash screen from automatically hiding
     SplashScreen.preventAutoHideAsync();
 
-    // You can optionally delay hiding the splash screen to display it for a specific duration
     setTimeout(async () => {
       await SplashScreen.hideAsync();
     }, 3000); // Adjust the duration as needed

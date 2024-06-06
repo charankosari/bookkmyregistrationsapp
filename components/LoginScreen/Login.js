@@ -21,9 +21,8 @@ const KeyboardAwareScrollViewComponent = ({ navigation }) => {
     const checkToken = async () => {
       try {
         const jwtToken = await AsyncStorage.getItem("jwtToken");
-        console.log("JWT Token:", jwtToken);
         if (jwtToken) {
-          navigation.push("HomeScreen");
+          navigation.replace("HomeScreen");
         }
       } catch (error) {
         console.error("Error retrieving JWT token:", error);
@@ -47,7 +46,7 @@ const KeyboardAwareScrollViewComponent = ({ navigation }) => {
       const data = await response.json();
       if (response.ok) {
         const userId = data.userid;
-        navigation.navigate("OtpLogin", { userId });
+        navigation.replace("OtpLogin", { userId });
       } else {
         Alert.alert("Error", data.error);
       }
