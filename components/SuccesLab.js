@@ -1,10 +1,10 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
-const Success = ({ navigation ,route}) => {
+
+const Success = ({ navigation }) => {
   const handleNavigateHome = () => {
     navigation.push("HomeScreen");
   };
-  const { response } = route.params;
 
   return (
     <View
@@ -22,7 +22,7 @@ const Success = ({ navigation ,route}) => {
       <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
         Booking Confirmed!
       </Text>
-      <Text style={{ fontSize: 18, marginBottom: 10 }}>Booking ID{response.booking.bookingId}</Text>
+      <Text style={{ fontSize: 18, marginBottom: 10 }}>Booking ID:56465</Text>
       <Text style={{ fontSize: 16, marginBottom: 20 }}>
         Thanks for choosing us.
       </Text>

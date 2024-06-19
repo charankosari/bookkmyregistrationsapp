@@ -8,38 +8,42 @@ import {
   SafeAreaView,
   ScrollView,
 } from "react-native";
-import Doctorpng from "../../assets/doctor.png";
+
+import image1 from '../../assets/icons/image1.png'
+import image2 from '../../assets/icons/image2.png'
+import image3 from '../../assets/icons/image3.png'
+import image4 from '../../assets/icons/image4.png'
+import image5 from '../../assets/icons/image5.png'
+import image6 from '../../assets/icons/image6.png'
+
 export default function HospitalCategories({ navigation, route }) {
-  const { lab } = route.params;
-  const options = [
-    { id: 1, categoryName: "Blood Test" },
-    { id: 2, categoryName: "X-Ray" },
-    { id: 3, categoryName: "MRI Scan" },
-    { id: 4, categoryName: "CT Scan" },
-    { id: 5, categoryName: "Ultrasound" },
-    { id: 6, categoryName: "ECG/EKG" },
-    { id: 7, categoryName: "Endoscopy" },
-    { id: 8, categoryName: "Colonoscopy" },
-    { id: 9, categoryName: "Biopsy" },
-    { id: 10, categoryName: "Echocardiogram" },
-    { id: 11, categoryName: "Pap Smear" },
-    { id: 12, categoryName: "Urinalysis" },
-    { id: 13, categoryName: "Stool Test" },
-    { id: 14, categoryName: "Electrolyte Panel" },
-    { id: 15, categoryName: "Thyroid Function Test" },
-  ];
+  const categoryImages = {
+    "Blood test": image1,
+    "Dental Care": image2,
+    "Homeopathy": image3,
+    "Ayurveda": image4,
+    "Mental Wellness": image5,
+    "Physiotherapy": image6,
+  };
+  const { hospital } = route.params;
+  const options = hospital.category.map((category, index) => ({
+    id: index + 1,
+    icon: categoryImages[category.types] || image1,
+    categoryName: category.types,
+  }));
 
   const handleOptionPress = (option) => {
-    navigation.navigate("LabDetails", { option, lab });
+    navigation.push("DetailedLabs", { option, hospital });
   };
+  
   return (
     <SafeAreaView
-    style={{
-      flex: 1,  
-      backgroundColor: "#fff",
-      paddingHorizontal: 20,
-      paddingTop: Platform.OS === "android" ? 50 : 20,
-  }}
+      style={{
+        flex: 1,
+        backgroundColor: "#fff",
+        paddingHorizontal: Platform.OS === "android" ? 20 : 0,
+        paddingTop: Platform.OS === "android" ? 50 : 20,
+      }}
     >
       <Text
         style={{
@@ -50,7 +54,7 @@ export default function HospitalCategories({ navigation, route }) {
           paddingLeft: 20,
         }}
       >
-        {lab.labName}{" "}
+        {hospital.hospitalName}
       </Text>
       <ScrollView>
         <View
@@ -78,14 +82,14 @@ export default function HospitalCategories({ navigation, route }) {
                 style={{
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: "#2BB673",
+                  backgroundColor: "#fff",
                   width: "70%",
                   height: 60,
                   borderRadius: 5,
                 }}
               >
                 <Image
-                  source={Doctorpng}
+                  source={option.icon}
                   style={{ width: 50, height: 50, borderRadius: 5 }}
                 />
               </View>

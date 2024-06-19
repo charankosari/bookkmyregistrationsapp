@@ -8,36 +8,41 @@ import {
   SafeAreaView,
   ScrollView,
 } from "react-native";
-import Doctorpng from "../../assets/doctor.png";
+
+import image1 from '../../assets/icons/image1.png'
+import image2 from '../../assets/icons/image2.png'
+import image3 from '../../assets/icons/image3.png'
+import image4 from '../../assets/icons/image4.png'
+import image5 from '../../assets/icons/image5.png'
+import image6 from '../../assets/icons/image6.png'
+
 export default function HospitalCategories({ navigation, route }) {
+  const categoryImages = {
+    "General Physician": image1,
+    "Dental Care": image2,
+    "Homeopathy": image3,
+    "Ayurveda": image4,
+    "Mental Wellness": image5,
+    "Physiotherapy": image6,
+  };
   const { hospital } = route.params;
-  const options = [
-    { id: 1, icon: "user", categoryName: "General Physician" },
-    { id: 2, icon: "heart", categoryName: "Cardiology" },
-    { id: 3, icon: "eye", categoryName: "Ophthalmology" },
-    { id: 4, icon: "scissor", categoryName: "Surgery" },
-    { id: 5, icon: "medicinebox", categoryName: "Pharmacy" },
-    { id: 6, icon: "dashboard", categoryName: "Radiology" },
-    { id: 7, icon: "user", categoryName: "Dermatology" },
-    { id: 8, icon: "heart", categoryName: "Pediatrics" },
-    { id: 9, icon: "eye", categoryName: "Optometry" },
-    { id: 10, icon: "scissor", categoryName: "Orthopedics" },
-    { id: 11, icon: "medicinebox", categoryName: "Neurology" },
-    { id: 12, icon: "dashboard", categoryName: "Endocrinology" },
-    { id: 13, icon: "user", categoryName: "Gastroenterology" },
-    { id: 14, icon: "heart", categoryName: "Hematology" },
-    { id: 15, icon: "eye", categoryName: "Urology" },
-  ];
+  const options = hospital.category.map((category, index) => ({
+    id: index + 1,
+    icon: categoryImages[category.types] || image1,
+    categoryName: category.types,
+  }));
+
   const handleOptionPress = (option) => {
     navigation.push("HospitalDetails", { option, hospital });
   };
+  
   return (
     <SafeAreaView
       style={{
-          flex: 1,
-          backgroundColor: "#fff",
-          paddingHorizontal: 20,
-          paddingTop: Platform.OS === "android" ? 50 : 20,
+        flex: 1,
+        backgroundColor: "#fff",
+        paddingHorizontal: Platform.OS === "android" ? 20 : 0,
+        paddingTop: Platform.OS === "android" ? 50 : 20,
       }}
     >
       <Text
@@ -49,7 +54,7 @@ export default function HospitalCategories({ navigation, route }) {
           paddingLeft: 20,
         }}
       >
-        {hospital.hospitalName}{" "}
+        {hospital.hospitalName}
       </Text>
       <ScrollView>
         <View
@@ -77,14 +82,14 @@ export default function HospitalCategories({ navigation, route }) {
                 style={{
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: "#2BB673",
+                  backgroundColor: "#fff",
                   width: "70%",
                   height: 60,
                   borderRadius: 5,
                 }}
               >
                 <Image
-                  source={Doctorpng}
+                  source={option.icon}
                   style={{ width: 50, height: 50, borderRadius: 5 }}
                 />
               </View>

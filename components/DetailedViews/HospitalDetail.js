@@ -1,71 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   Image,
   TouchableOpacity,
   Platform,
+  ActivityIndicator,
   SafeAreaView,
   TextInput,
   ScrollView,
 } from "react-native";
 import Doctorpng from "../../assets/doctor.png";
-import { FontAwesome } from "@expo/vector-icons";
+import { AirbnbRating } from "react-native-ratings";
+import moment from "moment";
 
 const HospitalDetailScreen = ({ navigation, route }) => {
   const { hospital, option } = route.params;
+  const [doctors, setDoctors] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [filteredDoctors, setFilteredDoctors] = useState([]);
-  
+  const [loading, setLoading] = useState(true);
 
-  const doctors = [
-    {
-      id: 1,
-      name: "Dr. John Doe",
-      rating: 4,
-      study: "MBBS",
-      favourite: true,
-      categories: ["General Physician"],
-    },
-    {
-      id: 2,
-      name: "Dr. Sarah Smith",
-      rating: 3,
-      study: "MD",
-      favourite: false,
-      categories: ["General Physician", "Neurology"],
-    },
-    {
-      id: 3,
-      name: "Dr. Michael Johnson",
-      rating: 5,
-      study: "MBBS",
-      favourite: true,
-      categories: ["General Physician", "Dermatology"],
-    },
-    {
-      id: 4,
-      name: "Dr. Emily Brown",
-      rating: 4,
-      study: "MD",
-      favourite: false,
-      categories: ["General Physician", "Cardiology"],
-    },
-    {
-      id: 5,
-      name: "Dr. David Wilson",
-      rating: 5,
-      study: "MBBS",
-      favourite: true,
-      categories: [
-        "General Physician",
-        "Cardiology",
-        "Neurology",
-        "Dermatology",
-        "Pharmacy",
-      ],
-    },
-  ];
+  useEffect(() => {
+    fetchDoctors();
+  }, []);
+
+  const fetchDoctors = async () => {
+    try {
+      const response = await fetch(
+        `https://server.bookmyappointments.in/api/bma/user/doctors/${hospital._id}`
+      );
+      const data = await response.json();
+      setDoctors(data.hospital.doctors);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+    }
+  };
+
   const handleSearch = (text) => {
     setSearchText(text);
     const filtered = doctors.filter((doctor) =>
@@ -74,15 +46,37 @@ const HospitalDetailScreen = ({ navigation, route }) => {
     setFilteredDoctors(filtered);
   };
 
+  const hasFutureBookings = (bookingids) => {
+    const today = moment().startOf('day');
+    return Object.keys(bookingids).some(date => moment(date, "DD-MM-YYYY").isSameOrAfter(today));
+  };
+
+  const filteredDoctorsList = (searchText ? filteredDoctors : doctors).filter(
+    (doctor) =>
+      doctor.specialist &&
+      doctor.specialist.includes(option.categoryName) &&
+      hasFutureBookings(doctor.bookingsids)
+  );
+
   return (
-    <SafeAreaView style={{flex: 1,
-      backgroundColor: "#fff",
-      paddingHorizontal: 20,
-      paddingTop: Platform.OS === "android" ? 40 : 20,}}>
-      <Text style={{ fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 10,
-    paddingLeft: 20,}}>{hospital.hospitalName} </Text>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: "#fff",
+        paddingHorizontal: Platform.OS === "android" ? 0 : 20,
+        paddingTop: Platform.OS === "android" ? 40 : 20,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 24,
+          fontWeight: "bold",
+          marginBottom: 10,
+          paddingLeft: 20,
+        }}
+      >
+        {hospital.hospitalName}
+      </Text>
       <TextInput
         style={{
           width: "auto",
@@ -99,117 +93,146 @@ const HospitalDetailScreen = ({ navigation, route }) => {
         placeholderTextColor="#666"
         onChangeText={handleSearch}
       />
-      <ScrollView>
-        <View>
-          <View style={{  flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 5,
-    display: "flex",}}>
-            <View style={{ width: "100%", height: "100%" }}>
-            <Text style={{marginLeft:20,marginBottom:10,fontSize:14,fontWeight:'500'}}>Selected Category : {option.categoryName}</Text>
-            {(searchText ? filteredDoctors : doctors)
-                .filter((doctor) =>
-                  doctor.categories.includes(option.categoryName)
-                )
-                .map((doctor) => (
-                  <TouchableOpacity
-                    key={doctor.id}
+
+      {loading ? (
+        <ActivityIndicator
+          style={{ marginTop: 20 }}
+          size="large"
+          color="#000"
+        />
+      ) : (
+        <ScrollView>
+          <View>
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                paddingHorizontal: 5,
+                display: "flex",
+              }}
+            >
+              <View style={{ width: "100%", height: "100%" }}>
+                <Text
+                  style={{
+                    marginLeft: 20,
+                    marginBottom: 10,
+                    fontSize: 14,
+                    fontWeight: "500",
+                  }}
+                >
+                  Selected Category : {option.categoryName}
+                </Text>
+                {filteredDoctorsList.length === 0 ? (
+                  <Text
                     style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      backgroundColor: "#D9D9D9",
-                      marginHorizontal:20,
-                      borderRadius: 10,
-                      padding: 10,
-                      marginBottom: 20,
-                      elevation: 4,
-                      shadowColor: "#000",
-                      shadowOffset: {
-                        width: 0,
-                        height: 2,
-                      },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 3.84,
-                    }}
-                    onPress={() => {
-                      navigation.navigate("DetailedDoctors", { doctor,hospital });
+                      marginLeft: 20,
+                      marginBottom: 10,
+                      fontSize: 18,
+                      color: "#ff0000",
                     }}
                   >
-                    <View
+                    No doctors available at the moment
+                  </Text>
+                ) : (
+                  filteredDoctorsList.map((doctor) => (
+                    <TouchableOpacity
+                      key={doctor._id}
                       style={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 5,
-                        backgroundColor: "#fff",
-                        justifyContent: "center",
+                        flexDirection: "row",
                         alignItems: "center",
+                        backgroundColor: "#D9D9D9",
+                        marginHorizontal: 20,
+                        borderRadius: 10,
+                        padding: 10,
+                        marginBottom: 20,
+                        elevation: 4,
+                        shadowColor: "#000",
+                        shadowOffset: {
+                          width: 0,
+                          height: 2,
+                        },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 3.84,
                       }}
-                    >
-                      <Image
-                        source={Doctorpng}
-                        style={{ width: 50, height: 50, borderRadius: 5 }}
-                      />
-                    </View>
-                    <View
-                      style={{
-                        flex: 1,
-                        marginLeft: 10,
+                      onPress={() => {
+                        navigation.navigate("DetailedDoctors", {
+                          doctor,
+                          hospital,
+                        });
                       }}
                     >
                       <View
                         style={{
-                          marginBottom: 5,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 18,
-                            fontWeight: "bold",
-                            color: "#333",
-                          }}
-                        >
-                          {doctor.name}  <Text style={{fontSize:12}}>({doctor.study})</Text>
-                        </Text>
-                      </View>
-                      <View
-                        style={{
-                          flexDirection: "row",
+                          width: 60,
+                          height: 60,
+                          borderRadius: 5,
+                          backgroundColor: "#fff",
+                          justifyContent: "center",
                           alignItems: "center",
                         }}
                       >
-                        {[...Array(doctor.rating)].map((_, index) => (
+                        <Image
+                          source={Doctorpng}
+                          style={{ width: 50, height: 50, borderRadius: 5 }}
+                        />
+                      </View>
+                      <View
+                        style={{
+                          flex: 1,
+                          marginLeft: 10,
+                        }}
+                      >
+                        <View
+                          style={{
+                            marginBottom: 5,
+                          }}
+                        >
                           <Text
-                            key={index}
                             style={{
-                              marginRight: 5,
-                              fontSize: 14,
-                              color: "#666",
+                              fontSize: 18,
+                              fontWeight: "bold",
+                              color: "#333",
                             }}
                           >
-                            ⭐
+                            {doctor.name}{" "}
+                            <Text style={{ fontSize: 12 }}>
+                              ({doctor.study})
+                            </Text>
                           </Text>
-                        ))}
-                       
+                        </View>
                         <View
-                          style={{ position: "absolute", top: -10, right: 20 }}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                          }}
                         >
-                          <FontAwesome
-                            name="heart"
+                          <AirbnbRating
+                            count={5}
                             size={24}
-                            color={doctor.favourite ? "red" : "#666"}
+                            defaultRating={4}
+                            showRating={false}
+                            isDisabled={true}
                           />
+                          <View
+                            style={{
+                              position: "absolute",
+                              top: -25,
+                              right: 20,
+                            }}
+                          >
+                          </View>
                         </View>
                       </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                    </TouchableOpacity>
+                  ))
+                )}
+              </View>
             </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
-
 
 export default HospitalDetailScreen;

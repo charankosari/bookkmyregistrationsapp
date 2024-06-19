@@ -39,7 +39,7 @@ const RegisterScreen = ({navigation}) => {
       if (response.status === 200) {
         navigation.replace("Otp", { number: data.number });
       } else {
-        console.log(data)
+        // console.log(data)
         Alert.alert("Error", data.error || "Registration failed");
       }
     } catch (error) {

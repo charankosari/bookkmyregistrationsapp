@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { WebView } from 'react-native-webview';
 export default function DetailedHospitalBooking({ route, navigation }) {
-  const { selectedDate, selectedTime, doctorDetails, lab } = route.params;
+  const { selectedDate, selectedTime, selectedOption, lab } = route.params;
   const [coupon, setCoupon] = useState("");
 
   const handleApplyCoupon = () => {};
@@ -63,11 +63,11 @@ export default function DetailedHospitalBooking({ route, navigation }) {
         >
           <Text style={{ fontSize: 16, fontWeight: 800 }}>{lab.labName}</Text>
           <Text style={{ fontSize: 14, fontWeight: 700 }}>
-            {doctorDetails.name}
+            {selectedOption}
           </Text>
-          <Text style={{ fontSize: 14, marginLeft: 5 }}>
+          {/* <Text style={{ fontSize: 14, marginLeft: 5 }}>
             {doctorDetails.study}{" "}
-          </Text>
+          </Text> */}
         </View>
       </View>
       <View style={{ marginBottom: 20, marginTop: 10 }}>

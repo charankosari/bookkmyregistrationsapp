@@ -18,7 +18,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "development"
+      "channel": "preview"
     },
     "preview": {
       "android": {

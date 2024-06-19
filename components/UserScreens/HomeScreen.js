@@ -36,7 +36,7 @@ const HomeScreen = ({navigation}) => {
           marginBottom: 20,
         }}
       >
-        <Text style={{ fontSize: 16, fontWeight: "600" }}>Hi {user.name} </Text>
+        <Text style={{ fontSize: 18, fontWeight: "600" }}>Hi {user.name} </Text>
       </View>
       <ScrollView>
         <View
@@ -49,7 +49,6 @@ const HomeScreen = ({navigation}) => {
           <TouchableOpacity
             style={{
               flex: 1,
-              borderRadius: 10,
               borderBottomWidth: 1,
               borderTopWidth: 1,
               borderColor: "#ccc",
@@ -59,9 +58,10 @@ const HomeScreen = ({navigation}) => {
               borderLeftWidth: 1,
               backgroundColor:
                 selectedCategory === "hospitals" ? "#2BB673" : "transparent",
-              borderTopRightRadius: selectedCategory === "hospitals" ? 0 : 10,
-              borderBottomRightRadius:
-                selectedCategory === "hospitals" ? 0 : 10,
+             borderTopLeftRadius:10,
+             borderBottomLeftRadius:10
+
+           
             }}
             onPress={() => handleCategorySelect("hospitals")}
           >
@@ -78,7 +78,6 @@ const HomeScreen = ({navigation}) => {
           <TouchableOpacity
             style={{
               flex: 1,
-              borderRadius:10,
               borderBottomWidth: 1,
               borderTopWidth: 1,
               borderColor: "#ccc",
@@ -86,9 +85,11 @@ const HomeScreen = ({navigation}) => {
               alignItems: "center",
               paddingVertical: 10,
               borderRightWidth: 1,
-              backgroundColor:selectedCategory === "labs" ? "#2BB673" : "transparent",
-              borderTopLeftRadius: selectedCategory === "labs" ? 0 : 10,
-              borderBottomLeftRadius: selectedCategory === "labs" ? 0 : 10,
+              backgroundColor:
+              selectedCategory === "labs" ? "#2BB673" : "transparent",
+                borderTopRightRadius:10,
+                borderBottomRightRadius:10
+           
             }}
             onPress={() => handleCategorySelect("labs")}
           >

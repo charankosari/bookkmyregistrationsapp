@@ -4,99 +4,213 @@ import {
   Text,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
+  SafeAreaView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontAwesome } from "@expo/vector-icons";
 import DoctorPng from "../../assets/doctor.png";
-import moment from "moment";
-const DetailedDoctors = ({ route ,navigation}) => {
+import { AirbnbRating } from "react-native-ratings";
+
+const DetailedDoctors = ({ route, navigation }) => {
+  const { doctor, hospital } = route.params;
   const [weekDates, setWeekDates] = useState([]);
   const [selectedDay, setSelectedDay] = useState(null);
-
-  const { doctor, hospital } = route.params;
+  const [selectedDayTimes, setSelectedDayTimes] = useState(null);
+  const [isFavorite, setIsFavorite] = useState(false);
   const [selectedRating, setSelectedRating] = useState(null);
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [favoriteLoading, setFavoriteLoading] = useState(true);
+
   const ratings = [
-    { id: 1, name: "Nikitha Apte", rating: "⭐⭐⭐", comment: "Great doctor!" },
-    {
-      id: 2,
-      name: "John Doe",
-      rating: "⭐⭐⭐⭐",
-      comment: "Very knowledgeable.",
-    },
-    { id: 3, name: "Nikitha Apte", rating: "⭐⭐⭐", comment: "Great doctor!" },
-    {
-      id: 4,
-      name: "John Doe",
-      rating: "⭐⭐⭐⭐",
-      comment: "Very knowledgeable.",
-    },
-    { id: 5, name: "Nikitha Apte", rating: "⭐⭐⭐", comment: "Great doctor!" },
-    {
-      id: 6,
-      name: "John Doe",
-      rating: "⭐⭐⭐⭐",
-      comment: "Very knowledgeable.",
-    },
+    { id: 1, name: "Nikitha Apte", rating: 3, comment: "Great doctor!" },
+    { id: 2, name: "John Doe", rating: 4, comment: "Very knowledgeable." },
+    { id: 3, name: "Nikitha Apte", rating: 3, comment: "Great doctor!" },
+    { id: 4, name: "John Doe", rating: 4, comment: "Very knowledgeable." },
+    { id: 5, name: "Nikitha Apte", rating: 3, comment: "Great doctor!" },
+    { id: 6, name: "John Doe", rating: 4, comment: "Very knowledgeable." },
   ];
 
   useEffect(() => {
-    const getWeekDates = () => {
-      const today = moment();
-      const endOfWeek = moment(today).add(6, "days");
+    const fetchDoctorTimings = async () => {
+      try {
+        const response = await fetch(
+          `https://server.bookmyappointments.in/api/bma/doc/${doctor._id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-      const dates = [];
-      let currentDate = moment(today);
+        const responseData = await response.json();
 
-      while (currentDate.isSameOrBefore(endOfWeek, "day")) {
-        dates.push({
-          day: currentDate.format("dddd"),
-          date: currentDate.format("DD"),
-        });
-        currentDate.add(1, "day");
+        if (response.ok) {
+          const dates = Object.keys(responseData.doctor.bookingsids);
+          const formattedDates = dates.map((date) => {
+            const dayData = responseData.doctor.bookingsids[date];
+            const morningAvailable = dayData.morning.some(
+              (slot) => !slot.bookingId
+            );
+            const eveningAvailable = dayData.evening.some(
+              (slot) => !slot.bookingId
+            );
+            const morningTimes = dayData.morning.map((slot) => ({
+              id: slot.time,
+              time: slot.time,
+              bookingId: slot.bookingId,
+            }));
+            const eveningTimes = dayData.evening.map((slot) => ({
+              id: slot.time,
+              time: slot.time,
+              bookingId: slot.bookingId,
+            }));
+
+            return {
+              date,
+              day: new Date(date).toLocaleDateString("en-GB", {
+                weekday: "long",
+              }),
+              morningAvailable,
+              eveningAvailable,
+              morningTimes,
+              eveningTimes,
+            };
+          });
+
+          setWeekDates(formattedDates);
+        } else {
+          Alert.alert("Error", responseData.message);
+        }
+      } catch (error) {
+        console.error("Error fetching doctor timings:", error);
+        Alert.alert(
+          "Error",
+          "An error occurred while fetching doctor timings."
+        );
+      } finally {
+        setLoading(false);
       }
-
-      setWeekDates(dates);
     };
 
-    getWeekDates();
-  }, []);
+    fetchDoctorTimings();
+  }, [doctor._id]);
 
   useEffect(() => {
-    if (weekDates.length > 0) {
-      setSelectedDay(weekDates[0]);
+    const fetchWishlist = async () => {
+      try {
+        const jwtToken = await AsyncStorage.getItem("jwtToken");
+        const response = await fetch(
+          `https://server.bookmyappointments.in/api/bma/me/wishlist`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          }
+        );
+
+        const responseData = await response.json();
+
+        if (response.ok) {
+          const isDoctorFavorite = responseData.data.doctors.some(
+            (item) => item._id === doctor._id
+          );
+          setIsFavorite(isDoctorFavorite);
+          setFavoriteLoading(false)
+        } else {
+          Alert.alert("Error", responseData.message);
+        }
+      } catch (error) {
+        console.error("Error fetching wishlist:", error);
+        Alert.alert("Error", "An error occurred while fetching the wishlist.");
+      }
+    };
+
+    fetchWishlist();
+  }, [doctor._id]);
+
+  const handleFavouritePress = async () => {
+    try {
+      setFavoriteLoading(true);
+      const jwtToken = await AsyncStorage.getItem("jwtToken");
+      const response = await fetch(
+        `https://server.bookmyappointments.in/api/bma/me/wishlist/${doctor._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${jwtToken}`,
+          },
+          body: JSON.stringify({
+            type: "doctor", 
+          }),
+        }
+      );
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        Alert.alert("Success", responseData.message);
+        setIsFavorite(!isFavorite); // Toggle favorite status
+      } else {
+        Alert.alert("Error", responseData.message);
+      }
+    } catch (error) {
+      console.error("Error adding doctor to favorites:", error);
+      Alert.alert("Error", "An error occurred while adding to favorites.");
+    } finally {
+      setFavoriteLoading(false);
     }
-  }, [weekDates]);
-  const times = [
-    { id: 1, time: "10AM" },
-    { id: 2, time: "11AM" },
-    { id: 5, time: "2PM" },
-    { id: 6, time: "3PM" },
-  ];
-  const [selectedTime, setSelectedTime] = useState(times[0]);
+  };
 
   const handleDayPress = (day) => {
+    // Reset selected time when a new day is selected
     setSelectedDay(day);
+    setSelectedDayTimes(day);
+    setSelectedTime(null);
   };
+
   const handleTimePress = (time) => {
-    setSelectedTime(time);
+    if (time.bookingId) {
+      Alert.alert(
+        "Slot Booked",
+        "This slot is already booked. Please select another time."
+      );
+    } else {
+      setSelectedTime(time);
+    }
   };
 
   const handleRatingPress = (rating) => {
     setSelectedRating(rating);
   };
-  const TimeDetails = ({ times }) => {
+
+  const TimeDetails = ({ morningTimes, eveningTimes }) => {
+    if (!morningTimes || !eveningTimes) {
+      return null; // Return nothing if timings are not available
+    }
+
+    const allTimes = [...morningTimes, ...eveningTimes];
+
     return (
       <ScrollView
         horizontal={true}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
           alignItems: "center",
           paddingHorizontal: 22,
           marginTop: 20,
         }}
       >
-        {times.map((time) => (
+        {allTimes.map((time) => (
           <TouchableOpacity
             key={time.id}
             style={{
@@ -105,9 +219,22 @@ const DetailedDoctors = ({ route ,navigation}) => {
               backgroundColor:
                 selectedTime && selectedTime.id === time.id
                   ? "#2BB673"
-                  : "#D9D9D9",
-              padding: 5,
-              borderRadius: 5,
+                  : time.bookingId
+                  ? "#D9D9D9"
+                  : "#ffffff",
+              padding: 10,
+              borderRadius: 10,
+              borderWidth: 1,
+              marginBottom: 10,
+              borderColor: "#ccc", // Border color
+              shadowColor: "#000", // Shadow color
+              shadowOffset: {
+                width: 0,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+              elevation: 5,
             }}
             onPress={() => handleTimePress(time)}
           >
@@ -117,6 +244,8 @@ const DetailedDoctors = ({ route ,navigation}) => {
                 color:
                   selectedTime && selectedTime.id === time.id
                     ? "white"
+                    : time.bookingId
+                    ? "gray"
                     : "black",
               }}
             >
@@ -127,7 +256,16 @@ const DetailedDoctors = ({ route ,navigation}) => {
       </ScrollView>
     );
   };
+
   const WeekDetails = ({ weekDates }) => {
+    if (!weekDates || weekDates.length === 0) {
+      return (
+        <View style={{ alignItems: "center", marginTop: 20 }}>
+          <Text>No available slots at the moment</Text>
+        </View>
+      );
+    }
+
     return (
       <ScrollView
         horizontal={true}
@@ -136,16 +274,28 @@ const DetailedDoctors = ({ route ,navigation}) => {
           paddingHorizontal: 20,
           marginTop: 20,
         }}
+        scrollEventThrottle={16}
       >
         {weekDates.map((day, index) => (
           <TouchableOpacity
             key={index}
             style={{
               alignItems: "center",
-              marginHorizontal: 10,
-              backgroundColor: selectedDay === day ? "#2BB673" : "#D9D9D9",
-              padding: 5,
-              borderRadius: 5,
+              marginHorizontal: 5,
+              backgroundColor: selectedDay === day ? "#2BB673" : "#fff",
+              padding: 10,
+              borderRadius: 10,
+              borderWidth: 1,
+              marginBottom: 10,
+              borderColor: "#ccc",
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 0,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+              elevation: 5,
             }}
             onPress={() => handleDayPress(day)}
           >
@@ -170,15 +320,26 @@ const DetailedDoctors = ({ route ,navigation}) => {
       </ScrollView>
     );
   };
-
   const handleBookNow = () => {
-    navigation.navigate("DetailedHospitalBooking", {
-      selectedDate: selectedDay.date,
-      selectedTime: selectedTime.time,
-      doctorDetails: doctor,
-      hospital,
-    });
+    if (!selectedDay || !selectedTime) {
+      Alert.alert("Error", "Please select a date and time.");
+    } else {
+      navigation.navigate("DetailedHospitalBooking", {
+        selectedDate: selectedDay.date,
+        selectedTime: selectedTime.time,
+        doctorDetails: doctor,
+        hospital,
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#2BB673" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView
@@ -195,6 +356,8 @@ const DetailedDoctors = ({ route ,navigation}) => {
             padding: 5,
             backgroundColor: "#f0f0f0",
             borderRadius: 10,
+            display: "flex",
+            flexDirection: "row",
             margin: 20,
           }}
         >
@@ -207,20 +370,45 @@ const DetailedDoctors = ({ route ,navigation}) => {
               marginBottom: 10,
             }}
           />
-          <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>
-            {doctor.name}
-          </Text>
-          <Text style={{ fontSize: 18, marginBottom: 10 }}>{doctor.study}</Text>
-          <FontAwesome
-            name={doctor.favourite ? "heart" : "heart-o"}
+          <View
             style={{
-              fontSize: 24,
-              position: "absolute",
-              top: 20,
-              right: 20,
-              color: doctor.favourite ? "red" : "gray",
+              flex: 1,
+              marginLeft: 20,
             }}
-          />
+          >
+            <Text
+              style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}
+            >
+              {doctor.name}
+            </Text>
+            <Text style={{ fontSize: 18, marginBottom: 10 }}>
+              {doctor.study}
+            </Text>
+          </View>
+          <TouchableOpacity
+  onPress={handleFavouritePress}
+  style={{
+    marginRight: 20,
+    marginBottom: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 50,
+    height: 50,
+  }}
+  disabled={favoriteLoading} // Disable button while loading
+>
+  {favoriteLoading ? (
+    <ActivityIndicator size="small" color="#2BB673" />
+  ) : (
+    <FontAwesome
+      name={isFavorite ? "heart" : "heart-o"}
+      style={{
+        fontSize: 24,
+        color: isFavorite ? "red" : "gray",
+      }}
+    />
+  )}
+</TouchableOpacity>
         </View>
         <Text style={{ fontSize: 18, paddingLeft: 20, fontWeight: "500" }}>
           Ratings
@@ -242,11 +430,25 @@ const DetailedDoctors = ({ route ,navigation}) => {
               >
                 <Image source={DoctorPng} style={{ height: 40, width: 40 }} />
                 <View style={{ display: "flex", flexDirection: "column" }}>
-                  <View style={{ flexDirection: "row", gap: 20 }}>
-                    <Text style={{ fontSize: 16, fontWeight: "500" }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      gap: 0,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{ fontSize: 16, fontWeight: "500", width: 110 }}
+                    >
                       {rating.name}
                     </Text>
-                    <Text>{rating.rating}</Text>
+                    <AirbnbRating
+                      count={5}
+                      defaultRating={rating.rating}
+                      size={24}
+                      showRating={false}
+                      isDisabled={true}
+                    />
                   </View>
                   {selectedRating && selectedRating.id === rating.id && (
                     <Text
@@ -264,24 +466,66 @@ const DetailedDoctors = ({ route ,navigation}) => {
             </View>
           ))}
         </ScrollView>
+        {selectedDay && (
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "center",
+              marginTop: 20,
+              backgroundColor: "#e6f7f2",
+              padding: 10,
+              marginLeft:20,
+              marginRight:20,
+              borderRadius: 10,
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "bold",
+                color: "#333",
+                marginRight: 10,
+              }}
+            >
+              Selected Date:{" "}
+              <Text style={{ color: "#2BB673" }}>{selectedDay.date}</Text>
+            </Text>
+            {selectedTime && (
+              <Text style={{ fontSize: 12, fontWeight: "bold", color: "#333" }}>
+                Selected Time:{" "}
+                <Text style={{ color: "#2BB673" }}>{selectedTime.time}</Text>
+              </Text>
+            )}
+          </View>
+        )}
+
         <WeekDetails weekDates={weekDates} />
-        <TimeDetails times={times} />
-        <TouchableOpacity
-          onPress={handleBookNow}
-          style={{
-            alignItems: "center",
-            backgroundColor: "#2BB673",
-            width: "40%",
-            padding: 10,
-            borderRadius: 5,
-            marginTop: 20,
-            marginLeft: 27,
-          }}
-        >
-          <Text style={{ color: "white", fontSize: 18, fontWeight: "bold" }}>
-            Book Now
-          </Text>
-        </TouchableOpacity>
+
+        {selectedDayTimes && (
+          <TimeDetails
+            morningTimes={selectedDayTimes.morningTimes}
+            eveningTimes={selectedDayTimes.eveningTimes}
+          />
+        )}
+        <View style={{ display: "flex", alignItems: "center" }}>
+          <TouchableOpacity
+            onPress={handleBookNow}
+            style={{
+              alignItems: "center",
+              backgroundColor: "#2BB673",
+              width: "40%",
+              padding: 10,
+              borderRadius: 5,
+              marginTop: 20,
+              marginLeft: 27,
+            }}
+          >
+            <Text style={{ color: "white", fontSize: 18, fontWeight: "bold" }}>
+              Book Now
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

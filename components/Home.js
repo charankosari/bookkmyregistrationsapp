@@ -26,19 +26,48 @@ const MainScreen = ({ navigation }) => {
               },
             }
           );
-          const data = await response.json();
 
-          if (data.success) {
-            await AsyncStorage.setItem("userData", JSON.stringify(data.user));
-            setUser(data.user); 
+          if (response.status === 401) {
+            Alert.alert(
+              "Session Expired",
+              "Your session has expired. Please log in again.",
+              [
+                {
+                  text: "OK",
+                  onPress: async () => {
+                    await AsyncStorage.removeItem("jwtToken");
+                    navigation.navigate("Login");
+                  },
+                },
+              ]
+            );
           } else {
-            Alert.alert("Error", "Failed to fetch user data, please log in again.");
-            navigation.navigate("Login");
+            const data = await response.json();
+            if (data.success) {
+              await AsyncStorage.setItem("userData", JSON.stringify(data.user));
+              setUser(data.user);
+            } else {
+              Alert.alert(
+                "Error",
+                "Failed to fetch user data, please log in again.",
+                [
+                  {
+                    text: "OK",
+                    onPress: async () => {
+                      await AsyncStorage.removeItem("jwtToken");
+                      navigation.navigate("Login");
+                    },
+                  },
+                ]
+              );
+            }
           }
         } else {
+          AsyncStorage.removeItem("jwtToken");
           navigation.navigate("Login");
         }
       } catch (error) {
+        AsyncStorage.removeItem("jwtToken");
         console.error("Error fetching user data:", error);
         navigation.navigate("Login");
       } finally {
@@ -48,6 +77,7 @@ const MainScreen = ({ navigation }) => {
 
     checkJwtToken();
   }, [navigation]);
+  
 
   if (loading) {
     return (

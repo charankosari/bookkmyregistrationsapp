@@ -64,13 +64,11 @@ const OtpScreen = ({navigation}) => {
       });
 
       const responseText = await response.text();
-      console.log("Raw response:", responseText);
 
       const responseData = JSON.parse(responseText);
 
       if (responseData.success) {
         await AsyncStorage.setItem("jwtToken", responseData.jwtToken);
-        console.log(responseData.jwtToken);
         navigation.replace("HomeScreen");
       } else {
         Alert.alert("Error", responseData.message || "Invalid response from server");

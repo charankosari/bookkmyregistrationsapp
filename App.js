@@ -8,7 +8,7 @@ import OtpScreen from "./components/LoginScreen/OtpScreen";
 import OtpScreenLogin from "./components/LoginScreen/OtpScreenLogin";
 import HomeScreen from "./components/Home";
 import HospitalDetail from "./components/DetailedViews/HospitalDetail";
-import LabDetail from "./components/DetailedViews/LabDetail";
+// import LabDetail from "./components/DetailedViews/LabDetail";
 import DetailedDoctors from "./components/DetailedLabsDoctors/DetailedDoctors";
 import DetailedLabs from "./components/DetailedLabsDoctors/DetailedLabs";
 import DetailedHospitalBooking from "./components/DetailedBookings/DetailedHospital";
@@ -25,6 +25,7 @@ import HospitalScreen from "./components/HospitalLabScreens/HospitalScreen";
 import LabScreen from "./components/HospitalLabScreens/LabsScreen";
 import Ho from "./components/UserScreens/HomeScreen";
 import Se from "./components/UserScreens/SettingsScreen";
+import ReturnDetailedDoc from "./components/DetailedLabsDoctors/ReturnDetailedDoc";
 import * as SplashScreen from "expo-splash-screen";
 
 const Stack = createNativeStackNavigator();
@@ -91,9 +92,14 @@ export default function App() {
           component={HospitalDetail}
           options={{ headerShown: false }}
         />
-        <Stack.Screen
+        {/* <Stack.Screen
           name="LabDetails"
           component={LabDetail}
+          options={{ headerShown: false }}
+        /> */}
+        <Stack.Screen
+          name="Return doctor details"
+          component={ReturnDetailedDoc}
           options={{ headerShown: false }}
         />
         <Stack.Screen

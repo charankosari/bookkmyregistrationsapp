@@ -8,67 +8,51 @@ import {
   SafeAreaView,
   FlatList,
   Modal,
+  Alert,
 } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
+
+import { AntDesign, Entypo } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { Entypo } from "@expo/vector-icons";
-export default function App({navigation}) {
-  const hospitals = [
-    {
-      hospitalName: "City Hospital",
-      image:
-        "https://www.apolloinformationcentre.com/wp-content/uploads/2019/09/hyderabad.jpg",
-      areaName: "Secunderabad",
-      categories: ["Dermatology", "Cardiology"],
-      latitude: 17.442252,
-      longitude: 78.496971,
-    },
-    {
-      hospitalName: "Pradhana Hospital",
-      image:
-        "https://www.apolloinformationcentre.com/wp-content/uploads/2019/09/hyderabad.jpg",
-      areaName: "Bhupalpalle",
-      categories: ["Dermatology", "Cardiology"],
-      latitude: 17.442252,
-      longitude: 78.496971,
-    },
-    {
-      hospitalName: "Unity Hospital",
-      image:
-        "https://www.apolloinformationcentre.com/wp-content/uploads/2019/09/hyderabad.jpg",
-      areaName: "Banjara Hills",
-      categories: ["Neurology", "Orthopedics"],
-      latitude: 17.442252,
-      longitude: 78.496971,
-    },
-    {
-      hospitalName: "Metro Clinic",
-      image:
-        "https://www.apolloinformationcentre.com/wp-content/uploads/2019/09/hyderabad.jpg",
-      areaName: "Ameerpet",
-      categories: ["ENT", "Ophthalmology"],
-      latitude: 17.442252,
-      longitude: 78.496971,
-    },
-    {
-      hospitalName: "Global Heart Institute",
-      image:
-        "https://www.apolloinformationcentre.com/wp-content/uploads/2019/09/hyderabad.jpg",
-      areaName: "Gachibowli",
-      categories: ["Cardiology", "Internal Medicine"],
-      latitude: 17.442252,
-      longitude: 78.496971,
-    },
-    {
-      hospitalName: "Evergreen Hospital",
-      image:
-        "https://www.apolloinformationcentre.com/wp-content/uploads/2019/09/hyderabad.jpg",
-      areaName: "Madhapur",
-      categories: ["Pediatrics", "Gynecology"],
-      latitude: 17.442252,
-      longitude: 78.496971,
-    },
-  ];
+
+export default function App({ navigation }) {
+  const [hospitals, setHospitals] = useState([]);
+  const [searchText, setSearchText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [locationPermission, setLocationPermission] = useState(null);
+  const [city, setCity] = useState(null);
+  const [location, setLocation] = useState(null);
+  const [selectedLocation, setSelectedLocation] = useState("Set Location");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredHospitals, setFilteredHospitals] = useState(hospitals);
+
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      try {
+        const response = await fetch(
+          "https://server.bookmyappointments.in/api/bma/hospital/admin/getallhospitals"
+        );
+        const data = await response.json();
+        if (response.ok) {
+          const hospitalsWithRole = data.hospitals.filter(
+            (hospital) => hospital.role === "hospital"
+          );
+          setHospitals(hospitalsWithRole);
+          setFilteredHospitals(hospitalsWithRole);
+        } else {
+          Alert.alert("Error", "Failed to fetch hospitals data");
+        }
+      } catch (error) {
+        console.error("Error fetching hospitals data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHospitals();
+  }, []);
+
+
   const hyderabadCities = [
     { id: 0, name: "None" },
     { id: 1, name: "Ameerpet" },
@@ -92,6 +76,7 @@ export default function App({navigation}) {
     { id: 19, name: "Abids" },
     { id: 20, name: "Himayat Nagar" },
   ];
+
   useEffect(() => {
     const getLocationPermissionAndFetchLocation = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -108,7 +93,6 @@ export default function App({navigation}) {
 
           if (address && address.length > 0) {
             setCity(address[0].district);
-            console.log(address[0])
           }
         } catch (error) {
           console.error("Error getting location:", error);
@@ -118,39 +102,42 @@ export default function App({navigation}) {
 
     getLocationPermissionAndFetchLocation();
   }, []);
-
-
-  const [searchText, setSearchText] = useState("");
-  const [locationPermission, setLocationPermission] = useState(null);
-  const [city, setCity] = useState(null);
-  const [location, setLocation] = useState(null);
-  const [selectedLocation, setSelectedLocation] = useState("Set Location");
-  const [modalVisible, setModalVisible] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredHospitals, setFilteredHospitals] = useState(hospitals);
   const handleSearch = (text) => {
     setSearchQuery(text);
     if (text.trim() === "") {
       setFilteredHospitals(hospitals);
-      console.log(hospitals);
     } else {
-      const filtered = hospitals.filter(
-        (hospital) =>
-          hospital.hospitalName.toLowerCase().includes(text.toLowerCase()) ||
-          hospital.areaName.toLowerCase().includes(text.toLowerCase()) ||
-          hospital.categories.some((category) =>
-            category.toLowerCase().includes(text.toLowerCase())
-          )
-      );
+      const filtered = hospitals.filter((hospital) => {
+        const { hospitalName, address, category } = hospital;
+        const isCategoryMatch =
+          Array.isArray(category) &&
+          category.some(
+            (cat) =>
+              typeof cat === "object" &&
+              cat.types &&
+              cat.types.toLowerCase().includes(text.toLowerCase())
+          );
+  
+        return (
+          hospitalName.toLowerCase().includes(text.toLowerCase()) ||
+          address[0].city.toLowerCase().includes(text.toLowerCase()) ||
+          isCategoryMatch
+        );
+      });
       setFilteredHospitals(filtered);
     }
   };
+  
+  
+  
+  
+  
 
   const handleSearchSubmit = () => {
     console.log("Search Query:", searchQuery);
   };
+
   const handleOptionPress = (option) => {
-    console.log(option, "item");
     if (option.name) {
       setSelectedLocation(option.name);
     } else {
@@ -160,10 +147,10 @@ export default function App({navigation}) {
     setModalVisible(false);
   };
 
-
   const handleSetLocation = () => {
     setModalVisible(true);
   };
+
   const filteredOptions = hyderabadCities.filter((option) =>
     option.name.toLowerCase().includes(searchText.toLowerCase())
   );
@@ -186,7 +173,7 @@ export default function App({navigation}) {
         }}
       >
         <Image
-          source={{ uri: hospital.image }}
+          source={{ uri: hospital.image[0] }}
           style={{ width: 90, height: 90, borderRadius: 10, marginRight: 10 }}
         />
         <View style={{ flex: 1, marginLeft: 20 }}>
@@ -194,12 +181,13 @@ export default function App({navigation}) {
             {hospital.hospitalName}
           </Text>
           <Text style={{ fontSize: 16, color: "gray" }}>
-            {hospital.areaName}
+            {hospital.address[0].city}
           </Text>
         </View>
       </View>
     </TouchableOpacity>
   );
+
   return (
     <View
       style={{
@@ -262,7 +250,7 @@ export default function App({navigation}) {
         </TouchableOpacity>
       </View>
 
-      {/* _____________its for location modal */}
+      {/* Location Modal */}
       <Modal
         animationType="slide"
         transparent={false}
@@ -329,7 +317,12 @@ export default function App({navigation}) {
                   borderBottomWidth: 1,
                   borderBottomColor: "#e5e5e5",
                 }}
-                onPress={() => handleOptionPress(item)}
+                onPress={() => {
+                  if (index !== 0 || item) {
+                    handleOptionPress(item);
+                  }
+                }}
+                disabled={index === 0 && !item}
               >
                 <Text
                   style={{
@@ -340,7 +333,9 @@ export default function App({navigation}) {
                   }}
                 >
                   {index === 0
-                    ? item + " (Your current Location)"
+                    ? item
+                      ? item + " (Your current Location)"
+                      : "Getting your location"
                     : item.name
                     ? item.name
                     : item}
@@ -350,15 +345,59 @@ export default function App({navigation}) {
           />
         </SafeAreaView>
       </Modal>
-      {selectedLocation === "Set Location" || selectedLocation === "None"
-        ? filteredHospitals.map((hospital, index) => (
+
+      {selectedLocation === "Set Location" || selectedLocation === "None" ? (
+        filteredHospitals.length > 0 ? (
+          filteredHospitals.map((hospital, index) => (
             <HospitalContainer key={index} hospital={hospital} />
           ))
-        : filteredHospitals
-            .filter((hospital) => hospital.areaName === selectedLocation)
-            .map((hospital, index) => (
-              <HospitalContainer key={index} hospital={hospital} />
-            ))}
+        ) : (
+          <Text
+            style={{
+              textAlign: "center",
+              marginTop: 5,
+              fontSize: 16,
+              color: "red",
+              marginBottom: 10,
+            }}
+          >
+            No hospitals found for your search.
+          </Text>
+        )
+      ) : filteredHospitals.filter(
+          (hospital) => hospital.address[0].city === selectedLocation
+        ).length > 0 ? (
+        filteredHospitals
+          .filter((hospital) => hospital.address[0].city === selectedLocation)
+          .map((hospital, index) => (
+            <HospitalContainer key={index} hospital={hospital} />
+          ))
+      ) : (
+        <>
+        <Text
+          style={{
+            textAlign: "center",
+            marginTop: 5,
+            fontSize: 16,
+            color: "red",
+            marginBottom: 15,
+          }}
+        >
+          Sorry, we cannot find any hospitals in your area.
+        </Text>
+        <View
+          style={{
+            borderBottomColor: '#495057',
+            borderBottomWidth: 2,
+            marginHorizontal: 10,
+            marginBottom: 15,
+          }}
+        />
+        {filteredHospitals.map((hospital, index) => (
+          <HospitalContainer key={index} hospital={hospital} />
+        ))}
+      </>
+      )}
     </View>
   );
 }
