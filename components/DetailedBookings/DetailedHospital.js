@@ -40,6 +40,10 @@ export default function DetailedHospitalBooking({ route, navigation }) {
   const handleApplyCoupon = () => {
     // Apply coupon logic here
   };
+  const convertDateFormat = (date) => {
+    const [dd, mm, yyyy] = date.split('-');
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -58,7 +62,7 @@ export default function DetailedHospitalBooking({ route, navigation }) {
           body: JSON.stringify({
             doctorId: doctorDetails._id,
             hospitalId: hospital._id,
-            date: selectedDate,
+            date: convertDateFormat(selectedDate),
             time: selectedTime,
             session:session,
             name: user.name,

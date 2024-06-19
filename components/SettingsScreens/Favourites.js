@@ -5,39 +5,46 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const MyBookings = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState([]);
+  const [doctors,setDoctors]=useState([])
+  const [tests,setTests]=useState([])
   const [jwt, setJwt] = useState('');
+
+  // Function to fetch doctor and hospital data
   const fetchDoctorAndHospitalData = async (itemId, hospitalId) => {
-    setLoading(true)
+    setLoading(true);
     try {
       const doctorResponse = await fetch(`https://server.bookmyappointments.in/api/bma/doc/${itemId}`);
-      const doctorData = await doctorResponse.json();
-  
       const hospitalResponse = await fetch(`https://server.bookmyappointments.in/api/bma/hospital/hospital/${hospitalId}`);
+      
+      const doctorData = await doctorResponse.json();
       const hospitalData = await hospitalResponse.json();
-  setLoading(false)
+      
+      setLoading(false);
       return { doctor: doctorData, hospital: hospitalData };
     } catch (error) {
-      setLoading(false)
+      setLoading(false);
       console.error("Error fetching doctor or hospital data:", error);
       return null;
     }
   };
-  
 
+  // Fetch wishlist items from API
   useEffect(() => {
     const fetchWishlist = async () => {
+      const jwtToken = await AsyncStorage.getItem("jwtToken");
       try {
-        const jwtToken = await AsyncStorage.getItem("jwtToken");
         setJwt(jwtToken);
         const response = await fetch('https://server.bookmyappointments.in/api/bma/me/wishlist', {
+          method:"GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${jwtToken}`,
           },
         });
         const responseData = await response.json();
-        if (response.ok) {
-          setWishlist(responseData.data);
+        if (responseData.success) {
+          setDoctors(responseData.data.doctors || []);
+          setTests(responseData.data.tests || []);
         } else {
           console.error("Error fetching wishlist:", responseData.message);
         }
@@ -50,7 +57,6 @@ const MyBookings = ({ navigation }) => {
 
     fetchWishlist();
   }, []);
-
   return (
     <SafeAreaView style={styles.container}>
       {loading ? (
@@ -60,31 +66,54 @@ const MyBookings = ({ navigation }) => {
       ) : (
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
           <Text style={{fontSize: 22, fontWeight: 'bold', marginBottom: 20, marginLeft: 5}}>Favourites</Text>
-          {wishlist.map((item) => (
-           <TouchableOpacity
-           key={item._id}
-  onPress={async () => {
-    const { doctor, hospital } = await fetchDoctorAndHospitalData(item._id, item.hospitalid);
-    if (doctor && hospital) {
-      navigation.navigate('Return doctor details', { doctor, hospital });
-    } else {
-    }
-  }}
-         >
+          
+          {doctors.map((doctor) => (
+            <TouchableOpacity
+              key={doctor._id}
+              onPress={async () => {
+                const { doctor: fetchedDoctor, hospital } = await fetchDoctorAndHospitalData(doctor._id, doctor.hospitalid);
+                if (fetchedDoctor && hospital) {
+                  navigation.navigate('Return doctor details', { doctor: fetchedDoctor, hospital });
+                } else {
+                  // Handle error or empty data scenario
+                }
+              }}
+            >
               <View style={styles.card}>
                 <Image
-                  source={{ uri: "https://imgs.search.brave.com/llw5Me8WgZERr-0oFufqGCziE0oWjCvP9AZIiFf8wyU/rs:fit:860:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/ZnJlZS1waG90by9k/b2N0b3Itd2l0aC13/aGl0ZS1yb2JlLXN0/ZXRob3Njb3BlXzE0/NDYyNy00Mzg3OS5q/cGc_c2l6ZT02MjYm/ZXh0PWpwZw" }}
+                  source={{ uri: "https://example.com/default-image.jpg" }} // Replace with actual image source logic
                   style={styles.image}
                 />
                 <View style={styles.textContainer}>
-                  <Text style={styles.name}>{item.name}</Text>
-                  <Text style={styles.specialist}>{item.specialist}</Text>
-                  <Text style={styles.study}>{item.study}</Text>
-                  <Text style={styles.experience}>Experience: {item.experience} years</Text>
+                  <Text style={styles.name}>{doctor.name}</Text>
+                  <Text style={styles.specialist}>{doctor.specialist}</Text>
+                  <Text style={styles.study}>{doctor.study}</Text>
+                  <Text style={styles.experience}>Experience: {doctor.experience || ''} years</Text>
                 </View>
               </View>
             </TouchableOpacity>
           ))}
+          {tests.map((test) => (
+            <TouchableOpacity
+              key={test._id}
+              onPress={() => {
+                navigation.navigate('LabDetails'); // Navigate to lab details directly
+              }}
+            >
+              <View style={styles.card}>
+                <Image
+                  source={{ uri: "https://example.com/default-image.jpg" }} // Replace with actual image source logic
+                  style={styles.image}
+                />
+                <View style={styles.textContainer}>
+                  <Text style={styles.name}>{test.name}</Text>
+                  <Text style={styles.testName}>{test.testName}</Text>
+                  {/* Add other fields specific to tests as needed */}
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+   
         </ScrollView>
       )}
     </SafeAreaView>
@@ -132,6 +161,7 @@ const styles = StyleSheet.create({
   },
   specialist: {
     fontSize: 16,
+    color: '#333',
   },
   study: {
     fontSize: 14,
@@ -140,6 +170,11 @@ const styles = StyleSheet.create({
   experience: {
     fontSize: 14,
     color: '#555',
+  },
+  testName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'black',
   },
 });
 

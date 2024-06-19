@@ -35,6 +35,7 @@ const DetailedDoctors = ({ route, navigation }) => {
     { id: 5, name: "Nikitha Apte", rating: 3, comment: "Great doctor!" },
     { id: 6, name: "John Doe", rating: 4, comment: "Very knowledgeable." },
   ];
+
   useEffect(() => {
     const fetchDoctorTimings = async () => {
       try {
@@ -94,6 +95,40 @@ const DetailedDoctors = ({ route, navigation }) => {
             });
 
             setWeekDates(formattedDates);
+
+            // Fetch wishlist and check if the test is in the wishlist
+            const fetchWishlist = async () => {
+              try {
+                const token = await AsyncStorage.getItem('jwtToken');
+                if (!token) {
+                  console.log('No token found');
+                  return;
+                }
+
+                const wishlistResponse = await fetch('https://server.bookmyappointments.in/api/bma/me/wishlist', {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+
+                if (!wishlistResponse.ok) {
+                  throw new Error('Network response was not ok');
+                }
+
+                const wishlistData = await wishlistResponse.json();
+                const wishlistTests = wishlistData.data.tests;
+
+                const isFavourite = wishlistTests.some(item => item._id === filteredTest._id);
+                setIsFavorite(isFavourite);
+              } catch (error) {
+                console.error('Error fetching wishlist:', error);
+              } finally {
+                setFavoriteLoading(false);
+              }
+            };
+
+            fetchWishlist();
           } else {
             Alert.alert("Error", "Selected test not found.");
           }
@@ -114,48 +149,13 @@ const DetailedDoctors = ({ route, navigation }) => {
     fetchDoctorTimings();
   }, [hospital._id, option]);
 
-  useEffect(() => {
-    const fetchWishlist = async () => {
-      try {
-        const jwtToken = await AsyncStorage.getItem("jwtToken");
-        const response = await fetch(
-          `https://server.bookmyappointments.in/api/bma/me/wishlist`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${jwtToken}`,
-            },
-          }
-        );
-
-        const responseData = await response.json();
-
-        if (response.ok) {
-          const isDoctorFavorite = responseData.data.tests.some(
-            (item) => item._id === test._id
-          );
-          setIsFavorite(isDoctorFavorite);
-          setFavoriteLoading(false)
-        } else {
-          Alert.alert("Error", responseData.message);
-        }
-      } catch (error) {
-        console.error("Error fetching wishlist:", error);
-        Alert.alert("Error", "An error occurred while fetching the wishlist.");
-      }
-    };
-
-    fetchWishlist();
-  }, [test]);
-
   const handleFavouritePress = async () => {
     try {
       setFavoriteLoading(true);
       const jwtToken = await AsyncStorage.getItem("jwtToken");
       console.log(test);
       const response = await fetch(
-        `https://server.bookmyappointments.in/api/bma/me/wishlist/${test._id}`,
+        `https://server.bookmyappointments.in/api/bma/me/wishlist`,
         {
           method: "POST",
           headers: {
@@ -164,11 +164,13 @@ const DetailedDoctors = ({ route, navigation }) => {
           },
           body: JSON.stringify({
             type: "test",
+            testId: test._id,
           }),
         }
       );
 
       const responseData = await response.json();
+      console.log(responseData);
 
       if (response.ok) {
         Alert.alert("Success", responseData.message);
@@ -334,15 +336,16 @@ const DetailedDoctors = ({ route, navigation }) => {
       </ScrollView>
     );
   };
+
   const handleBookNow = () => {
     if (!selectedDay || !selectedTime) {
       Alert.alert("Error", "Please select a date and time.");
     } else {
-      navigation.navigate("DetailedHospitalBooking", {
-        // selectedDate: selectedDay.date,
-        // selectedTime: selectedTime.time,
-        // doctorDetails: doctor,
-        // hospital,
+      navigation.navigate("DetailedLabBooking", {
+       selectedDate: selectedDay.date,
+        selectedTime: selectedTime.time,
+        testDetails: test,
+        hospital,
       });
     }
   };
@@ -399,7 +402,6 @@ const DetailedDoctors = ({ route, navigation }) => {
             <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 10 }}>
               {test.name.charAt(0).toUpperCase() + test.name.slice(1)}
             </Text>
-           
           </View>
           <TouchableOpacity
             onPress={handleFavouritePress}
