@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import moment from "moment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontAwesome } from "@expo/vector-icons";
 import DoctorPng from "../../assets/doctor.png";
@@ -25,7 +26,7 @@ const DetailedDoctors = ({ route, navigation }) => {
   const [selectedTime, setSelectedTime] = useState(null);
   const [loading, setLoading] = useState(true);
   const [favoriteLoading, setFavoriteLoading] = useState(true);
-  const [test, setTest] = useState(null);
+  const [test, setTest] = useState([]);
 
   const ratings = [
     { id: 1, name: "Nikitha Apte", rating: 3, comment: "Great doctor!" },
@@ -48,90 +49,46 @@ const DetailedDoctors = ({ route, navigation }) => {
             },
           }
         );
-
-        const responseData = await response.json();
-        console.log(responseData);
-
+        const some = await response.json();
+        const responseData = some.hospital.tests.find(
+          (test) => test.name === option
+        );
         if (response.ok) {
-          const tests = responseData.hospital.tests;
-          console.log(tests, option);
-          const filteredTest = tests.find(
-            (test) => test.name === option.categoryName
-          );
-          console.log(filteredTest);
-          setTest(filteredTest);
+          const dates = Object.keys(responseData.bookingsids);
+          const formattedDates = dates.map((date) => {
+            const dayData = responseData.bookingsids[date];
+            const morningAvailable = dayData.morning.some(
+              (slot) => !slot.bookingId
+            );
+            const eveningAvailable = dayData.evening.some(
+              (slot) => !slot.bookingId
+            );
+            const morningTimes = dayData.morning.map((slot) => ({
+              id: slot.time,
+              time: slot.time,
+              bookingId: slot.bookingId,
+            }));
+            const eveningTimes = dayData.evening.map((slot) => ({
+              id: slot.time,
+              time: slot.time,
+              bookingId: slot.bookingId,
+            }));
 
-          if (filteredTest) {
-            const dates = Object.keys(filteredTest.bookingsids);
-            const formattedDates = dates.map((date) => {
-              const dayData = filteredTest.bookingsids[date];
-              const morningAvailable = dayData.morning.some(
-                (slot) => !slot.bookingId
-              );
-              const eveningAvailable = dayData.evening.some(
-                (slot) => !slot.bookingId
-              );
-              const morningTimes = dayData.morning.map((slot) => ({
-                id: slot.time,
-                time: slot.time,
-                bookingId: slot.bookingId,
-              }));
-              const eveningTimes = dayData.evening.map((slot) => ({
-                id: slot.time,
-                time: slot.time,
-                bookingId: slot.bookingId,
-              }));
-
-              return {
-                date,
-                day: new Date(date).toLocaleDateString("en-GB", {
-                  weekday: "long",
-                }),
-                morningAvailable,
-                eveningAvailable,
-                morningTimes,
-                eveningTimes,
-              };
-            });
-
-            setWeekDates(formattedDates);
-
-            // Fetch wishlist and check if the test is in the wishlist
-            const fetchWishlist = async () => {
-              try {
-                const token = await AsyncStorage.getItem('jwtToken');
-                if (!token) {
-                  console.log('No token found');
-                  return;
-                }
-
-                const wishlistResponse = await fetch('https://server.bookmyappointments.in/api/bma/me/wishlist', {
-                  method: 'GET',
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  }
-                });
-
-                if (!wishlistResponse.ok) {
-                  throw new Error('Network response was not ok');
-                }
-
-                const wishlistData = await wishlistResponse.json();
-                const wishlistTests = wishlistData.data.tests;
-
-                const isFavourite = wishlistTests.some(item => item._id === filteredTest._id);
-                setIsFavorite(isFavourite);
-              } catch (error) {
-                console.error('Error fetching wishlist:', error);
-              } finally {
-                setFavoriteLoading(false);
-              }
+            return {
+              date,
+              day: new Date(date).toLocaleDateString("en-GB", {
+                weekday: "long",
+              }),
+              morningAvailable,
+              eveningAvailable,
+              morningTimes,
+              eveningTimes,
             };
+          });
 
-            fetchWishlist();
-          } else {
-            Alert.alert("Error", "Selected test not found.");
-          }
+          setWeekDates(formattedDates);
+          setTest(responseData);
+          
         } else {
           Alert.alert("Error", responseData.message);
         }
@@ -147,15 +104,48 @@ const DetailedDoctors = ({ route, navigation }) => {
     };
 
     fetchDoctorTimings();
-  }, [hospital._id, option]);
+  }, [test._id]);
+
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        const jwtToken = await AsyncStorage.getItem("jwtToken");
+        const response = await fetch(
+          `https://server.bookmyappointments.in/api/bma/me/wishlist`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          }
+        );
+
+        const responseData = await response.json();
+
+        if (response.ok) {
+          const isDoctorFavorite = responseData.data.tests.some(
+            (item) => item._id === test._id
+          );
+          setIsFavorite(isDoctorFavorite);
+          setFavoriteLoading(false);
+        } else {
+          Alert.alert("Error", responseData.message);
+        }
+      } catch (error) {
+        console.error("Error fetching wishlist:", error);
+      }
+    };
+
+    fetchWishlist();
+  }, [test._id]);
 
   const handleFavouritePress = async () => {
     try {
       setFavoriteLoading(true);
       const jwtToken = await AsyncStorage.getItem("jwtToken");
-      console.log(test);
       const response = await fetch(
-        `https://server.bookmyappointments.in/api/bma/me/wishlist`,
+        `https://server.bookmyappointments.in/api/bma/me/wishlist/${test._id}`,
         {
           method: "POST",
           headers: {
@@ -164,13 +154,11 @@ const DetailedDoctors = ({ route, navigation }) => {
           },
           body: JSON.stringify({
             type: "test",
-            testId: test._id,
           }),
         }
       );
 
       const responseData = await response.json();
-      console.log(responseData);
 
       if (response.ok) {
         Alert.alert("Success", responseData.message);
@@ -242,8 +230,8 @@ const DetailedDoctors = ({ route, navigation }) => {
               borderRadius: 10,
               borderWidth: 1,
               marginBottom: 10,
-              borderColor: "#ccc", // Border color
-              shadowColor: "#000", // Shadow color
+              borderColor: "#ccc",
+              shadowColor: "#000",
               shadowOffset: {
                 width: 0,
                 height: 2,
@@ -265,7 +253,7 @@ const DetailedDoctors = ({ route, navigation }) => {
                     : "black",
               }}
             >
-              {time.time}
+              {moment(time.time, "HH:mm").format("HH:mm")}
             </Text>
           </TouchableOpacity>
         ))}
@@ -277,10 +265,34 @@ const DetailedDoctors = ({ route, navigation }) => {
     if (!weekDates || weekDates.length === 0) {
       return (
         <View style={{ alignItems: "center", marginTop: 20 }}>
-          <Text>No available slots at the moment</Text>
+          <Text>No labs available at the moment</Text>
         </View>
       );
     }
+
+    const filterDatesByTime = (dates) => {
+      const currentDate = moment();
+      return dates.reduce((filteredDates, day) => {
+        const isToday = moment(
+          `${day.date}-${day.month}-${day.year}`,
+          "DD-MM-YYYY"
+        ).isSame(currentDate, "day");
+        if (!isToday) {
+          filteredDates.push(day);
+        } else {
+          const allTimes = [...day.morningTimes, ...day.eveningTimes];
+          const hasValidTime = allTimes.some((time) =>
+            moment(time, "HH:mm").isSameOrAfter(currentDate, "minute")
+          );
+          if (hasValidTime) {
+            filteredDates.push(day);
+          }
+        }
+        return filteredDates;
+      }, []);
+    };
+
+    const filteredWeekDates = filterDatesByTime(weekDates);
 
     return (
       <ScrollView
@@ -292,7 +304,7 @@ const DetailedDoctors = ({ route, navigation }) => {
         }}
         scrollEventThrottle={16}
       >
-        {weekDates.map((day, index) => (
+        {filteredWeekDates.map((day, index) => (
           <TouchableOpacity
             key={index}
             style={{
@@ -321,7 +333,7 @@ const DetailedDoctors = ({ route, navigation }) => {
                 color: selectedDay === day ? "white" : "black",
               }}
             >
-              {day.day.slice(0, 3)}
+              {moment(day.date).format("ddd")}
             </Text>
             <Text
               style={{
@@ -342,12 +354,20 @@ const DetailedDoctors = ({ route, navigation }) => {
       Alert.alert("Error", "Please select a date and time.");
     } else {
       navigation.navigate("DetailedLabBooking", {
-       selectedDate: selectedDay.date,
+        selectedDate: selectedDay.date,
         selectedTime: selectedTime.time,
         testDetails: test,
         hospital,
       });
     }
+  };
+
+  const filterTodayTimes = (times) => {
+    const now = moment();
+    return times.filter((time) => {
+      const slotTime = moment(time.time, "HH:mm");
+      return slotTime.isAfter(now);
+    });
   };
 
   if (loading) {
@@ -357,7 +377,13 @@ const DetailedDoctors = ({ route, navigation }) => {
       </View>
     );
   }
-
+  if (test === 'undefined') {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", marginTop: 20 }}>
+        <Text>No tests at the moment</Text>
+      </View>
+    );}
+  else{
   return (
     <SafeAreaView
       style={{
@@ -366,6 +392,8 @@ const DetailedDoctors = ({ route, navigation }) => {
         paddingTop: Platform.OS === "android" ? 40 : 20,
       }}
     >
+      <ScrollView>
+      
       <ScrollView>
         <View
           style={{
@@ -379,12 +407,13 @@ const DetailedDoctors = ({ route, navigation }) => {
           }}
         >
           <Image
-            source={DoctorPng}
+              source={{ uri: test.image[0]}}
             style={{
               width: 100,
               height: 100,
               borderRadius: 50,
               marginBottom: 10,
+              objectFit:'contain'
             }}
           />
           <View
@@ -394,12 +423,8 @@ const DetailedDoctors = ({ route, navigation }) => {
             }}
           >
             <Text
-              style={{ fontSize: 20, fontWeight: "bold", marginBottom: 10 }}
+              style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}
             >
-              {hospital.hospitalName.charAt(0).toUpperCase() +
-                hospital.hospitalName.slice(1)}
-            </Text>
-            <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 10 }}>
               {test.name.charAt(0).toUpperCase() + test.name.slice(1)}
             </Text>
           </View>
@@ -413,7 +438,7 @@ const DetailedDoctors = ({ route, navigation }) => {
               width: 50,
               height: 50,
             }}
-            disabled={favoriteLoading} // Disable button while loading
+            disabled={favoriteLoading}
           >
             {favoriteLoading ? (
               <ActivityIndicator size="small" color="#2BB673" />
@@ -484,6 +509,22 @@ const DetailedDoctors = ({ route, navigation }) => {
             </View>
           ))}
         </ScrollView>
+        <WeekDetails weekDates={weekDates} />
+
+        {selectedDayTimes && (
+          <TimeDetails
+            morningTimes={
+              moment(selectedDay.date, "DD-MM-YYYY").isSame(moment(), "day")
+                ? filterTodayTimes(selectedDayTimes.morningTimes)
+                : selectedDayTimes.morningTimes
+            }
+            eveningTimes={
+              moment(selectedDay.date, "DD-MM-YYYY").isSame(moment(), "day")
+                ? filterTodayTimes(selectedDayTimes.eveningTimes)
+                : selectedDayTimes.eveningTimes
+            }
+          />
+        )}
         {selectedDay && (
           <View
             style={{
@@ -497,6 +538,7 @@ const DetailedDoctors = ({ route, navigation }) => {
               borderRadius: 10,
               alignItems: "center",
             }}
+            
           >
             <Text
               style={{
@@ -507,24 +549,21 @@ const DetailedDoctors = ({ route, navigation }) => {
               }}
             >
               Selected Date:{" "}
-              <Text style={{ color: "#2BB673" }}>{selectedDay.date}</Text>
+              <Text style={{ color: "#2BB673" }}>
+                {moment(selectedDay.date).format("DD-MM-YYYY")}
+              </Text>
             </Text>
             {selectedTime && (
-              <Text style={{ fontSize: 12, fontWeight: "bold", color: "#333" }}>
+              <Text
+                style={{ fontSize: 12, fontWeight: "bold", color: "#333" }}
+              >
                 Selected Time:{" "}
-                <Text style={{ color: "#2BB673" }}>{selectedTime.time}</Text>
+                <Text style={{ color: "#2BB673" }}>
+                  {moment(selectedTime.time, "HH:mm").format("HH:mm")}
+                </Text>
               </Text>
             )}
           </View>
-        )}
-
-        <WeekDetails weekDates={weekDates} />
-
-        {selectedDayTimes && (
-          <TimeDetails
-            morningTimes={selectedDayTimes.morningTimes}
-            eveningTimes={selectedDayTimes.eveningTimes}
-          />
         )}
         <View style={{ display: "flex", alignItems: "center" }}>
           <TouchableOpacity
@@ -545,8 +584,12 @@ const DetailedDoctors = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+        
+          </ScrollView>
     </SafeAreaView>
   );
-};
+}
+}
+
 
 export default DetailedDoctors;

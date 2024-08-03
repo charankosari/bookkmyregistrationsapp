@@ -8,7 +8,6 @@ import OtpScreen from "./components/LoginScreen/OtpScreen";
 import OtpScreenLogin from "./components/LoginScreen/OtpScreenLogin";
 import HomeScreen from "./components/Home";
 import HospitalDetail from "./components/DetailedViews/HospitalDetail";
-// import LabDetail from "./components/DetailedViews/LabDetail";
 import DetailedDoctors from "./components/DetailedLabsDoctors/DetailedDoctors";
 import DetailedLabs from "./components/DetailedLabsDoctors/DetailedLabs";
 import DetailedHospitalBooking from "./components/DetailedBookings/DetailedHospital";
@@ -27,7 +26,10 @@ import Ho from "./components/UserScreens/HomeScreen";
 import Se from "./components/UserScreens/SettingsScreen";
 import ReturnDetailedDoc from "./components/DetailedLabsDoctors/ReturnDetailedDoc";
 import * as SplashScreen from "expo-splash-screen";
-
+import ViewScreen from "./components/SettingsScreens/ViewScreen";
+import ImageScreen from "./components/SettingsScreens/ImageScreen";
+import TermsAndConditions from "./components/SettingsScreens/TermsAndConditions";
+import PrivacyPolicy from './components/SettingsScreens/PrivacyPolicy'
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -92,11 +94,7 @@ export default function App() {
           component={HospitalDetail}
           options={{ headerShown: false }}
         />
-        {/* <Stack.Screen
-          name="LabDetails"
-          component={LabDetail}
-          options={{ headerShown: false }}
-        /> */}
+     
         <Stack.Screen
           name="Return doctor details"
           component={ReturnDetailedDoc}
@@ -138,6 +136,14 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
+          name="Terms and conditions"
+          component={TermsAndConditions}
+        />
+        <Stack.Screen
+          name="Privacy Policy"
+          component={PrivacyPolicy}
+        />
+        <Stack.Screen
           name="DetailedLabBooking"
           component={DetailedLabBooking}
           options={{ headerShown: false }}
@@ -151,6 +157,14 @@ export default function App() {
           name="LabCategories"
           component={LabCategories}
           options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="View Pdf"
+          component={ViewScreen}
+        />
+        <Stack.Screen
+          name="View Image"
+          component={ImageScreen}
         />
         <Stack.Screen
           name="Booking Confirmed"

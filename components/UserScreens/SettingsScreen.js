@@ -14,22 +14,33 @@ import {
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 const SettingsScreen = ({ navigation }) => {
   const [isProfileModalVisible, setProfileModalVisible] = useState(false);
   const [isNumberModalVisible, setNumberModalVisible] = useState(false);
   const [initialName, setInitialName] = useState("");
   const [initialEmail, setInitialEmail] = useState("");
   const [initialNumber, setInitialNumber] = useState("");
+  const [intialAge, setIntialAge] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [age, setAge] = useState("");
   const [number, setNumber] = useState("");
+  const [weight, setWeight] = useState("");
+  const [intialWeight, setIntialWeight] = useState("");
+  const [height, setHeight] = useState("");
+  const [intialHeight, setIntialHeight] = useState("");
   const [token, setToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState("");
   const [newNumber, setNewNumber] = useState("");
+  const [initialGender, setInitialGender] = useState("");
+  const [gender, setGender] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [userData, setUserData] = useState(null);
+  const genderOptions = [
+    { label: 'Male', value: 'male' },
+    { label: 'Female', value: 'female' }
+  ];
   useEffect(() => {
     const getUserData = async () => {
       try {
@@ -40,6 +51,13 @@ const SettingsScreen = ({ navigation }) => {
           setInitialName(user.name);
           setInitialEmail(user.email);
           setInitialNumber(user.number.toString());
+          setIntialAge(user.age);
+          setIntialWeight(user.weight);
+          setIntialHeight(user.height);
+          setInitialGender(user.gender || "");
+          setAge(user.age);
+          setWeight(user.weight);
+          setHeight(user.height);
           setName(user.name);
           setEmail(user.email);
           setNumber(user.number.toString());
@@ -54,6 +72,11 @@ const SettingsScreen = ({ navigation }) => {
     getUserData();
   }, []);
 
+  const handleChangeNumber = () => {
+    setProfileModalVisible(false);
+    setNumberModalVisible(true);
+  };
+
   const handleEditProfile = () => {
     setProfileModalVisible(true);
   };
@@ -61,9 +84,12 @@ const SettingsScreen = ({ navigation }) => {
   const handleSaveProfile = async () => {
     setLoading(true);
     const updatedFields = {};
-
     if (name !== initialName) updatedFields.name = name;
     if (email !== initialEmail) updatedFields.email = email;
+    if (age !== intialAge) updatedFields.age = age;
+    if (weight !== intialWeight) updatedFields.weight = weight;
+    if (height !== intialHeight) updatedFields.height = height;
+    if (gender !== initialGender) updatedFields.gender = gender;
 
     if (Object.keys(updatedFields).length === 0) {
       Alert.alert("No changes", "No changes were made to the profile.");
@@ -73,7 +99,7 @@ const SettingsScreen = ({ navigation }) => {
 
     try {
       const response = await fetch(
-        "https://server.bookmyappointments.in/api/bma/me/numberupdate",
+        "https://server.bookmyappointments.in/api/bma/me/profileupdate",
         {
           method: "PUT",
           headers: {
@@ -120,7 +146,7 @@ const SettingsScreen = ({ navigation }) => {
         }
       );
       const data = await response.json();
-     
+
       if (data.message === "OTP sent successfully") {
         setOtpSent(true);
         Alert.alert("Success", "OTP sent to the new mobile number.");
@@ -153,7 +179,7 @@ const SettingsScreen = ({ navigation }) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            otp:parseInt(otp),
+            otp: parseInt(otp),
             number: newNumber,
             userid: userData._id,
           }),
@@ -167,7 +193,10 @@ const SettingsScreen = ({ navigation }) => {
         setNumberModalVisible(false);
         Alert.alert("Success", "Mobile number updated successfully!");
       } else {
-        Alert.alert("Error", "Failed to verify OTP or update mobile number.");
+        Alert.alert(
+          "Error",
+          "Failed to verify OTP or update mobile number."
+        );
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);
@@ -179,13 +208,15 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleSignOut = () => {
     AsyncStorage.removeItem("jwtToken");
-    navigation.push("Login");
+    navigation.replace("Login");
   };
-const something=()=>{
-  setOtpSent(false);
-  setNumberModalVisible(!isNumberModalVisible);
-  setNewNumber('')
-}
+
+  const something = () => {
+    setOtpSent(false);
+    setNumberModalVisible(!isNumberModalVisible);
+    setNewNumber("");
+  };
+
   return (
     <SafeAreaView
       style={{
@@ -241,7 +272,113 @@ const something=()=>{
                   placeholder="Email"
                   value={email}
                   onChangeText={setEmail}
+                
                 />
+
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your age"
+                  value={age}
+                  keyboardType="numeric"
+                  onChangeText={setAge}
+                  placeholderTextColor={"#888"}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter Weight in (kg)"
+                  value={weight}
+                  onChangeText={setWeight}
+                  placeholderTextColor={"#888"}
+                />
+
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter Height in (cm)"
+                  value={height}
+                  onChangeText={setHeight}
+                  placeholderTextColor={"#888"}
+                />
+          <View style={{width:'90%',paddingHorizontal:30,display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center'}}>
+  <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>
+    Set Gender
+  </Text>
+  <View
+    style={{
+      flexDirection: "row",
+      paddingHorizontal: 20,
+      marginBottom: 20,
+    }}
+  >
+    <TouchableOpacity
+      style={{
+        flex: 1,
+        borderBottomWidth: 1,
+        borderTopWidth: 1,
+        borderColor: "#ccc",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingVertical: 10,
+        borderLeftWidth: 1,
+        backgroundColor: gender === "female" ? "#2BB673" : "transparent",
+        borderTopLeftRadius: 10,
+        borderBottomLeftRadius: 10,
+      }}
+      onPress={() => setGender("female")}
+    >
+      <Text
+        style={{
+          fontSize: 16,
+          fontWeight: "500",
+          color: gender === "female" ? "#fff" : "#000",
+        }}
+      >
+        Female
+      </Text>
+    </TouchableOpacity>
+    <TouchableOpacity
+      style={{
+        flex: 1,
+        borderBottomWidth: 1,
+        borderTopWidth: 1,
+        borderColor: "#ccc",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingVertical: 10,
+        borderRightWidth: 1,
+        backgroundColor: gender === "male" ? "#2BB673" : "transparent",
+        borderTopRightRadius: 10,
+        borderBottomRightRadius: 10,
+      }}
+      onPress={() => setGender("male")}
+    >
+      <Text
+        style={{
+          fontSize: 16,
+          fontWeight: "500",
+          color: gender === "male" ? "#fff" : "#000",
+        }}
+      >
+        Male
+      </Text>
+    </TouchableOpacity>
+  </View>
+  </View>
+                <View style={styles.numberContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Number"
+                    value={number}
+                    editable={false}
+                  />
+                  <TouchableOpacity
+                    style={styles.changeNumberButton}
+                    onPress={handleChangeNumber}
+                  >
+                    <Text style={styles.changeNumberText}>
+                      Change Number
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <TouchableOpacity
                   style={styles.button}
                   onPress={handleSaveProfile}
@@ -255,7 +392,9 @@ const something=()=>{
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.button, { backgroundColor: "grey" }]}
-                  onPress={() => setProfileModalVisible(!isProfileModalVisible)}
+                  onPress={() =>
+                    setProfileModalVisible(!isProfileModalVisible)
+                  }
                 >
                   <Text style={styles.buttonText}>Cancel</Text>
                 </TouchableOpacity>
@@ -278,7 +417,9 @@ const something=()=>{
           >
             <View style={styles.modalBackground}>
               <View style={styles.modalView}>
-                <Text style={styles.modalText}>Change Mobile Number</Text>
+                <Text style={styles.modalText}>
+                  Change Mobile Number
+                </Text>
                 {otpSent ? (
                   <>
                     <TextInput
@@ -287,6 +428,7 @@ const something=()=>{
                       value={otp}
                       onChangeText={setOtp}
                       keyboardType="numeric"
+                      placeholderTextColor="#888"
                     />
                     <TouchableOpacity
                       style={styles.button}
@@ -308,6 +450,7 @@ const something=()=>{
                       value={newNumber}
                       onChangeText={setNewNumber}
                       keyboardType="phone-pad"
+                      placeholderTextColor="#888"
                     />
                     <TouchableOpacity
                       style={styles.button}
@@ -350,14 +493,7 @@ const something=()=>{
         >
           <Text style={styles.optionText}>Favourites</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.option}
-          onPress={() => {
-            setNumberModalVisible(true);
-          }}
-        >
-          <Text style={styles.optionText}>Change Mobile Number</Text>
-        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.option}
           onPress={() => {
@@ -374,8 +510,27 @@ const something=()=>{
         >
           <Text style={styles.optionText}>Help and Support</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => {
+            navigation.navigate("Terms and conditions");
+          }}
+        >
+          <Text style={styles.optionText}>Terms and conditions</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => {
+            navigation.navigate("Privacy Policy");
+          }}
+        >
+          <Text style={styles.optionText}>Privacy Policy</Text>
+        </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
+        <TouchableOpacity
+          onPress={handleSignOut}
+          style={styles.signOutButton}
+        >
           <Text style={styles.signOutButtonText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
@@ -390,6 +545,32 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     marginBottom: 20,
+  },
+  numberContainer: {
+    position: "relative",
+    width: "100%",
+  },
+  changeNumberButton: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    backgroundColor: "#fff",
+    borderRightColor: "#ddd",
+    borderRightWidth: 1,
+    borderTopColor: "#ddd",
+    borderTopWidth: 1,
+    borderBottomColor: "#ddd",
+    borderBottomWidth: 1,
+    borderLeftColor: "#ddd",
+    borderLeftWidth: 1,
+    height: 40,
+  },
+  changeNumberText: {
+    color: "#2BB673", // Adjust text color as needed
   },
   userInfoText: {
     fontSize: 16,
@@ -431,6 +612,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 40,
     borderColor: "#ddd",
+    color: "black",
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,

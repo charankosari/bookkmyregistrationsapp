@@ -61,7 +61,6 @@ const HomeScreen = ({navigation}) => {
              borderTopLeftRadius:10,
              borderBottomLeftRadius:10
 
-           
             }}
             onPress={() => handleCategorySelect("hospitals")}
           >

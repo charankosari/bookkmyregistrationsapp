@@ -33,7 +33,7 @@ export default function HospitalCategories({ navigation, route }) {
   }));
 
   const handleOptionPress = (option) => {
-    navigation.push("DetailedLabs", { option, hospital });
+    navigation.push("DetailedLabs", { option:option.categoryName, hospital });
   };
   
   return (

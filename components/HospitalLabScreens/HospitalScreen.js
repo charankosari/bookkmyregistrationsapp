@@ -9,11 +9,25 @@ import {
   FlatList,
   Modal,
   Alert,
+  ScrollView,
 } from "react-native";
-
 import { AntDesign, Entypo } from "@expo/vector-icons";
 import * as Location from "expo-location";
+import image1 from "../../assets/icons/image1.png";
+import image2 from "../../assets/icons/image2.png";
+import image3 from "../../assets/icons/image3.png";
+import image4 from "../../assets/icons/image4.png";
+import image5 from "../../assets/icons/image5.png";
+import image6 from "../../assets/icons/image6.png";
 
+const categoryImages = {
+  "General Physician": image1,
+  "Dental Care": image2,
+  "Homeopathy": image3,
+  "Ayurveda": image4,
+  "Mental Wellness": image5,
+  "Physiotherapy": image6,
+};
 export default function App({ navigation }) {
   const [hospitals, setHospitals] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -25,9 +39,12 @@ export default function App({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredHospitals, setFilteredHospitals] = useState(hospitals);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
     const fetchHospitals = async () => {
+      setLoading(true);
       try {
         const response = await fetch(
           "https://server.bookmyappointments.in/api/bma/hospital/admin/getallhospitals"
@@ -39,6 +56,14 @@ export default function App({ navigation }) {
           );
           setHospitals(hospitalsWithRole);
           setFilteredHospitals(hospitalsWithRole);
+
+          const categoriesSet = new Set();
+          hospitalsWithRole.forEach((hospital) => {
+            hospital.category.forEach((cat) => {
+              categoriesSet.add(cat.types);
+            });
+          });
+          setCategories(Array.from(categoriesSet));
         } else {
           Alert.alert("Error", "Failed to fetch hospitals data");
         }
@@ -51,7 +76,6 @@ export default function App({ navigation }) {
 
     fetchHospitals();
   }, []);
-
 
   const hyderabadCities = [
     { id: 0, name: "None" },
@@ -102,36 +126,46 @@ export default function App({ navigation }) {
 
     getLocationPermissionAndFetchLocation();
   }, []);
+
   const handleSearch = (text) => {
     setSearchQuery(text);
-    if (text.trim() === "") {
-      setFilteredHospitals(hospitals);
-    } else {
-      const filtered = hospitals.filter((hospital) => {
-        const { hospitalName, address, category } = hospital;
+    applyFilters(text, selectedCategory);
+  };
+
+  const handleCategoryChange = (category) => {
+    const newCategory = category === selectedCategory ? null : category;
+    setSelectedCategory(newCategory);
+    applyFilters(searchQuery, newCategory);
+  };
+
+  const applyFilters = (text, category) => {
+    let filtered = hospitals;
+    if (text.trim() !== "") {
+      filtered = filtered.filter((hospital) => {
+        const { hospitalName, address, category: hospitalCategory } = hospital;
         const isCategoryMatch =
-          Array.isArray(category) &&
-          category.some(
+          Array.isArray(hospitalCategory) &&
+          hospitalCategory.some(
             (cat) =>
               typeof cat === "object" &&
               cat.types &&
               cat.types.toLowerCase().includes(text.toLowerCase())
           );
-  
+
         return (
           hospitalName.toLowerCase().includes(text.toLowerCase()) ||
           address[0].city.toLowerCase().includes(text.toLowerCase()) ||
           isCategoryMatch
         );
       });
-      setFilteredHospitals(filtered);
     }
+    if (category) {
+      filtered = filtered.filter((hospital) =>
+        hospital.category.some((cat) => cat.types === category)
+      );
+    }
+    setFilteredHospitals(filtered);
   };
-  
-  
-  
-  
-  
 
   const handleSearchSubmit = () => {
     console.log("Search Query:", searchQuery);
@@ -154,7 +188,7 @@ export default function App({ navigation }) {
   const filteredOptions = hyderabadCities.filter((option) =>
     option.name.toLowerCase().includes(searchText.toLowerCase())
   );
-
+  console.log(filteredHospitals)
   const HospitalContainer = ({ hospital }) => (
     <TouchableOpacity
       onPress={() => {
@@ -172,10 +206,39 @@ export default function App({ navigation }) {
           marginBottom: 10,
         }}
       >
-        <Image
-          source={{ uri: hospital.image[0] }}
-          style={{ width: 90, height: 90, borderRadius: 10, marginRight: 10 }}
-        />
+        <View
+          style={{
+            width: 90,
+            height: 90,
+            borderRadius: 10,
+            overflow: "hidden",
+            marginRight: 10,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+            {hospital.image[0] !==''? (
+            <Image
+              source={{ uri: hospital.image[0] }}
+              style={{ width: "100%", height: "100%", borderRadius: 10 }}
+            />
+          ) : (
+            <View
+              style={{
+                width: "100%",
+                height: "100%",
+                backgroundColor: "#ccc",
+                justifyContent: "center",
+                alignItems: "center",
+                borderRadius: 10,
+              }}
+            >
+              <Text style={{ color: "#fff", fontSize: 36, fontWeight: "bold" }}>
+                {hospital.hospitalName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+        </View>
         <View style={{ flex: 1, marginLeft: 20 }}>
           <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 5 }}>
             {hospital.hospitalName}
@@ -234,6 +297,41 @@ export default function App({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        <ScrollView
+          horizontal={true}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingLeft: 10, paddingBottom: 10 }}
+        >
+          {categories.map((category, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => handleCategoryChange(category)}
+              style={{
+                marginRight: 10,
+                alignItems: "center",
+              }}
+            >
+              <Image
+                source={categoryImages[category] || image1}
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 10,
+                  borderWidth: selectedCategory === category ? 2 : 0,
+                  borderColor:
+                    selectedCategory === category ? "#000" : "transparent",
+                }}
+              />
+
+              <Text
+                style={{ marginTop: 5, textAlign: "center", marginVertical: 5 }}
+              >
+                {category}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
         <TouchableOpacity
           onPress={handleSetLocation}
           style={{
@@ -250,7 +348,6 @@ export default function App({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Location Modal */}
       <Modal
         animationType="slide"
         transparent={false}
@@ -374,29 +471,29 @@ export default function App({ navigation }) {
           ))
       ) : (
         <>
-        <Text
-          style={{
-            textAlign: "center",
-            marginTop: 5,
-            fontSize: 16,
-            color: "red",
-            marginBottom: 15,
-          }}
-        >
-          Sorry, we cannot find any hospitals in your area.
-        </Text>
-        <View
-          style={{
-            borderBottomColor: '#495057',
-            borderBottomWidth: 2,
-            marginHorizontal: 10,
-            marginBottom: 15,
-          }}
-        />
-        {filteredHospitals.map((hospital, index) => (
-          <HospitalContainer key={index} hospital={hospital} />
-        ))}
-      </>
+          <Text
+            style={{
+              textAlign: "center",
+              marginTop: 5,
+              fontSize: 16,
+              color: "red",
+              marginBottom: 15,
+            }}
+          >
+            Sorry, we cannot find any hospitals in your area.
+          </Text>
+          <View
+            style={{
+              borderBottomColor: "#495057",
+              borderBottomWidth: 2,
+              marginHorizontal: 10,
+              marginBottom: 15,
+            }}
+          />
+          {filteredHospitals.map((hospital, index) => (
+            <HospitalContainer key={index} hospital={hospital} />
+          ))}
+        </>
       )}
     </View>
   );

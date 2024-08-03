@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useState } from "react";
 import {
   View,
@@ -37,6 +38,7 @@ const RegisterScreen = ({navigation}) => {
       const data = await response.json();
 
       if (response.status === 200) {
+        await AsyncStorage.setItem("details", JSON.stringify({ name, email, number: phoneNumber }));
         navigation.replace("Otp", { number: data.number });
       } else {
         // console.log(data)

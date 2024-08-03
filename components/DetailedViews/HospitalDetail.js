@@ -166,14 +166,13 @@ const HospitalDetailScreen = ({ navigation, route }) => {
                           width: 60,
                           height: 60,
                           borderRadius: 5,
-                          backgroundColor: "#fff",
                           justifyContent: "center",
                           alignItems: "center",
                         }}
                       >
                         <Image
-                          source={Doctorpng}
-                          style={{ width: 50, height: 50, borderRadius: 5 }}
+                          source={{ uri: doctor.image }}
+                          style={{ width: 60, height: 60, borderRadius: 5,objectFit:'contain' }}
                         />
                       </View>
                       <View

@@ -4,8 +4,10 @@ import {
   Text,
   SafeAreaView,
   ScrollView,
+  Linking,
   TouchableOpacity,
   StyleSheet,
+  Platform
 } from "react-native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import Collapsible from "react-native-collapsible";
@@ -22,8 +24,17 @@ const HelpAndSupport = () => {
       answer:
         "You cannot cancel your appointment directly. Please contact our customer care team for assistance with cancellations.",
     },
-    // Add more FAQs as needed
   ];
+  const phoneNumber = '+9178326238';
+  const emailAddress = 'support@example.com';
+
+  const handlePhonePress = () => {
+    Linking.openURL(`tel:${phoneNumber}`);
+  };
+
+  const handleEmailPress = () => {
+    Linking.openURL(`mailto:${emailAddress}`);
+  };
 
   const [activeSections, setActiveSections] = useState([]);
 
@@ -48,9 +59,7 @@ const HelpAndSupport = () => {
               flexDirection: "row",
             }}
           >
-            <Text style={styles.sectionHeader}>
-              <Ionicons name="help-circle-outline" size={20} color="#2BB673" />
-            </Text>
+        
             <Text style={styles.sectionHeader}>
               <Text style={styles.sectionHeaderText}>
                 Frequently Asked Questions
@@ -89,21 +98,19 @@ const HelpAndSupport = () => {
               flexDirection: "row",
             }}
           >
-            <Text style={styles.sectionHeader}>
-              <Ionicons name="call-outline" size={20} color="#2BB673" />
-            </Text>
+       
             <Text style={styles.sectionHeader}>
               <Text style={styles.sectionHeaderText}>Contact Us</Text>
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.contactItem}>
+          <TouchableOpacity style={styles.contactItem} onPress={handlePhonePress}>
             <FontAwesome name="phone" size={16} color="#2BB673" />
-            <Text style={styles.contactText}>Call Us:+91 78326238</Text>
+            <Text style={styles.contactText}>Call Us :{phoneNumber}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.contactItem}>
+          <TouchableOpacity style={styles.contactItem} onPress={handleEmailPress}>
             <FontAwesome name="envelope" size={16} color="#2BB673" />
-            <Text style={styles.contactText}>Email: support@example.com</Text>
+            <Text style={styles.contactText}>Email: {emailAddress}</Text>
           </TouchableOpacity>
         </View>
 
@@ -115,9 +122,7 @@ const HelpAndSupport = () => {
               flexDirection: "row",
             }}
           >
-            <Text style={styles.sectionHeader}>
-              <Ionicons name="people-outline" size={20} color="#2BB673" />
-            </Text>
+      
             <Text style={styles.sectionHeader}>
               <Text style={styles.sectionHeaderText}>Customer Support</Text>
             </Text>
@@ -138,6 +143,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
+    paddingTop:Platform.OS==='ios'?0:30
   },
   scrollViewContent: {
     padding: 20,

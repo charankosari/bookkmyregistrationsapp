@@ -25,6 +25,7 @@ export default function DetailedHospitalBooking({ route, navigation }) {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
+        console.log(testDetails)
         const jwtToken = await AsyncStorage.getItem("jwtToken");
         const userData = JSON.parse(await AsyncStorage.getItem("userData"));
         setJwt(jwtToken);
@@ -65,7 +66,7 @@ export default function DetailedHospitalBooking({ route, navigation }) {
             name: user.name,
             email: user.email,
             phonenumber: user.number,
-            amountpaid: 250
+            amountpaid: testDetails.price.consultancyfee+testDetails.price.servicefee
           })
         }
       );
@@ -111,12 +112,39 @@ export default function DetailedHospitalBooking({ route, navigation }) {
             justifyContent: "center",
           }}
         >
-          <Image
-            source={{
-              uri: "https://imgs.search.brave.com/llw5Me8WgZERr-0oFufqGCziE0oWjCvP9AZIiFf8wyU/rs:fit:860:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/ZnJlZS1waG90by9k/b2N0b3Itd2l0aC13/aGl0ZS1yb2JlLXN0/ZXRob3Njb3BlXzE0/NDYyNy00Mzg3OS5q/cGc_c2l6ZT02MjYm/ZXh0PWpwZw",
-            }}
-            style={{ width: 100, height: 100, borderRadius: 5 }}
-          />
+          <View
+          style={{
+            width: 130,
+            height: 90,
+            borderRadius: 10,
+            overflow: "hidden",
+            marginRight: 10,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+            {hospital.image[0] !==''? (
+            <Image
+              source={{ uri: hospital.image[0] }}
+              style={{ width: "100%", height: "100%", borderRadius: 10 }}
+            />
+          ) : (
+            <View
+              style={{
+                width: "100%",
+                height: "100%",
+                backgroundColor: "#ccc",
+                justifyContent: "center",
+                alignItems: "center",
+                borderRadius: 10,
+              }}
+            >
+              <Text style={{ color: "#fff", fontSize: 36, fontWeight: "bold" }}>
+                {hospital.hospitalName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+        </View>
           <View
             style={{
               marginBottom: 20,
@@ -211,7 +239,7 @@ export default function DetailedHospitalBooking({ route, navigation }) {
               }}
             >
               <Text style={{ fontSize: 16 }}>Consultancy Fee:</Text>
-              <Text style={{ fontSize: 16, fontWeight: "bold" }}>₹150</Text>
+              <Text style={{ fontSize: 16, fontWeight: "bold" }}>₹ {testDetails.price.consultancyfee}</Text>
             </View>
             <View
               style={{
@@ -221,7 +249,7 @@ export default function DetailedHospitalBooking({ route, navigation }) {
               }}
             >
               <Text style={{ fontSize: 16 }}>Service Fee:</Text>
-              <Text style={{ fontSize: 16, fontWeight: "bold" }}>₹100</Text>
+              <Text style={{ fontSize: 16, fontWeight: "bold" }}>₹ {testDetails.price.servicefee}</Text>
             </View>
           </View>
           <View
@@ -237,7 +265,7 @@ export default function DetailedHospitalBooking({ route, navigation }) {
             <Text
               style={{ fontSize: 18, fontWeight: "bold", color: "#2BB673" }}
             >
-              ₹250
+              ₹ {testDetails.price.consultancyfee+testDetails.price.servicefee}
             </Text>
           </View>
         </View>

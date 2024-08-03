@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, SafeAreaView, TouchableOpacity, Modal, StyleSheet, FlatList, Alert, Linking, ActivityIndicator } from "react-native";
+import { View, Text, SafeAreaView, TouchableOpacity,Platform, Modal, StyleSheet, FlatList, Alert, ActivityIndicator } from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { WebView } from 'react-native-webview';
 
-const MedicalReports = () => {
+const MedicalReports = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [files, setFiles] = useState([]);
   const [token, setToken] = useState('');
   const [uploadingFile, setUploadingFile] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [loadingFile, setLoadingFile] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState(null);
+  const [previewFileUrl, setPreviewFileUrl] = useState(null);
 
   useEffect(() => {
     const getToken = async () => {
@@ -18,7 +22,7 @@ const MedicalReports = () => {
         const token = await AsyncStorage.getItem('jwtToken');
         if (token) {
           setToken(token);
-          fetchFiles(token); // Fetch files after token is retrieved
+          fetchFiles(token);
         }
       } catch (error) {
         console.error('Error retrieving token:', error);
@@ -27,9 +31,8 @@ const MedicalReports = () => {
     getToken();
   }, []);
 
-  const fetchFiles = async () => {
+  const fetchFiles = async (jwtToken) => {
     setFetching(true);
-    const jwtToken = await AsyncStorage.getItem('jwtToken');
     try {
       const response = await fetch('https://server.bookmyappointments.in/api/bma/getfiles', {
         headers: {
@@ -72,40 +75,67 @@ const MedicalReports = () => {
           quality: 1,
         });
       }
-
       if (result.canceled) return;
 
       const formData = new FormData();
+      const asset = result.assets[0];
+      let uri, name, mimeType;
+      if (type === 'file') {
+        uri = asset.uri;
+        name = asset.name;
+        mimeType = asset.mimeType;
+      } else {
+        uri = asset.uri;
+        name = asset.fileName;
+        mimeType = asset.mimeType;
+      }
       formData.append('file', {
-        uri: result.uri,
-        name: result.name || 'image.jpg',
-        type: result.type || 'image/jpeg',
+        uri: uri,
+        name: name,
+        type: mimeType,
       });
-
+      setModalVisible(false)
+      setFetching(true)
       const response = await fetch('https://server.bookmyappointments.in/api/bma/upload', {
         method: 'POST',
         body: formData,
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${jwtToken}`,
+          'Authorization':` Bearer ${jwtToken}`,
         },
       });
 
       if (response.ok) {
-        fetchFiles(token);
+        fetchFiles(jwtToken);
         handleCloseModal();
+        
       } else {
         Alert.alert('Upload failed', 'Please try again.');
       }
     } catch (error) {
+      console.log(result)
       console.error('Error uploading file:', error);
       Alert.alert('Error', 'An error occurred. Please try again.');
     } finally {
       setUploadingFile(false);
+      setFetching(false)
     }
   };
 
+
   const handleDelete = async (filename) => {
+    if (!deleteConfirmation) {
+      setDeleteConfirmation(filename);
+      return;
+    }
+
+    if (deleteConfirmation !== filename) {
+      setDeleteConfirmation(null);
+      return;
+    }
+
+    setDeleteConfirmation(null);
+
     const jwtToken = await AsyncStorage.getItem('jwtToken');
     try {
       const response = await fetch(`https://server.bookmyappointments.in/api/bma/delete/${filename}`, {
@@ -114,9 +144,9 @@ const MedicalReports = () => {
           'Authorization': `Bearer ${jwtToken}`,
         },
       });
-
       if (response.ok) {
-        fetchFiles();
+        const updatedFiles = files.filter(file => file.name !== filename);
+        setFiles(updatedFiles);
       } else {
         Alert.alert('Delete failed', 'Please try again.');
       }
@@ -125,16 +155,28 @@ const MedicalReports = () => {
     }
   };
 
+  const handleFileClick = (item) => {
+    const fileType = item.name.split('.').pop().toLowerCase();
+    if (fileType === 'pdf') {
+      navigation.navigate('View Pdf', { uri: item.location });
+    } else {
+      navigation.navigate('View Image', { uri: item.location });
+    }
+  };
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <TouchableOpacity style={styles.cardContent} onPress={() => Linking.openURL(item.location)}>
-        <Text style={styles.fileName}>{item.name}</Text>
+      <TouchableOpacity style={styles.cardContent} onPress={() => handleFileClick(item)}>
+        <View style={styles.fileInfo}>
+          <MaterialIcons name="insert-drive-file" size={24} color="#2BB673" style={styles.fileIcon} />
+          <Text style={styles.fileName}>{item.name}</Text>
+        </View>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => handleDelete(item.name)}>
+      <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item.name)}>
         <MaterialIcons name="delete" size={24} color="red" />
       </TouchableOpacity>
     </View>
   );
+  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -193,10 +235,51 @@ const MedicalReports = () => {
         </View>
       </Modal>
 
-      {uploadingFile && (
+      {loadingFile && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#2BB673" />
-          <Text style={styles.loadingText}>Uploading...</Text>
+          <Text style={styles.loadingText}>Downloading...</Text>
+        </View>
+      )}
+
+      {previewFileUrl && (
+        <Modal
+          animationType="slide"
+          transparent={false}
+          visible={!!previewFileUrl}
+          onRequestClose={() => setPreviewFileUrl(null)}
+        >
+          <View style={{ flex: 1 }}>
+            <TouchableOpacity style={{ margin: 20 }} onPress={() => setPreviewFileUrl(null)}>
+              <Text style={{ color: 'blue' }}>Close Preview</Text>
+            </TouchableOpacity>
+            <WebView
+              source={{ uri: previewFileUrl }}
+              style={{ flex: 1 }}
+            />
+          </View>
+        </Modal>
+      )}
+
+      {deleteConfirmation && (
+        <View style={styles.deleteConfirmation}>
+          <View style={styles.deleteConfirmationText}>
+            <Text>Are you sure you want to delete this file?</Text>
+            <View style={styles.deleteConfirmationButtons}>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={() => handleDelete(deleteConfirmation)}
+              >
+                <Text style={styles.confirmButtonText}>Confirm</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setDeleteConfirmation(null)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       )}
     </SafeAreaView>
@@ -207,6 +290,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
+    paddingTop:Platform.OS==='ios'?0:30
+
   },
   contentContainer: {
     flex: 1,
@@ -235,56 +320,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 15,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
     marginVertical: 5,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
+    backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
     elevation: 3,
   },
   cardContent: {
     flex: 1,
   },
+  fileInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding:5,
+    width:'85%'
+  },
+  fileIcon: {
+    marginRight: 10,
+  },
   fileName: {
     fontSize: 16,
-    color: '#333',
+    color: 'black',
+  },
+  deleteButton: {
+    padding: 5,
   },
   fab: {
     position: 'absolute',
     bottom: 20,
     right: 20,
-    backgroundColor: '#2BB673',
     width: 60,
     height: 60,
     borderRadius: 30,
-    justifyContent: 'center',
+    backgroundColor: '#2BB673',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
+    justifyContent: 'center',
+    elevation: 8,
   },
   modalBackground: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContainer: {
-    width: 300,
     backgroundColor: 'white',
-    borderRadius: 10,
     padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    maxWidth: 400,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
   },
   modalTitle: {
     fontSize: 20,
@@ -292,24 +383,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalButton: {
-    width: '100%',
-    padding: 15,
-    borderRadius: 10,
     backgroundColor: '#2BB673',
-    alignItems: 'center',
-    marginVertical: 5,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+    marginBottom: 10,
   },
   modalButtonText: {
     color: 'white',
     fontSize: 16,
   },
   modalCloseButton: {
-    width: '100%',
-    padding: 15,
-    borderRadius: 10,
-    backgroundColor: 'grey',
-    alignItems: 'center',
-    marginVertical: 5,
+    backgroundColor: '#FF6347',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+    marginTop: 10,
   },
   modalCloseButtonText: {
     color: 'white',
@@ -317,14 +406,55 @@ const styles = StyleSheet.create({
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#fff',
+    color: 'white',
+  },
+  deleteConfirmation: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteConfirmationText: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    maxWidth: 400,
+    textAlign: 'center',
+  },
+  deleteConfirmationButtons: {
+    flexDirection: 'row',
+    marginTop: 20,
+    justifyContent:'center'
+  },
+  confirmButton: {
+    backgroundColor: '#2BB673',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  confirmButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  cancelButton: {
+    backgroundColor: '#FF6347',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+    marginLeft: 10,
+  },
+  cancelButtonText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
 

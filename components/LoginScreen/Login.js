@@ -46,6 +46,7 @@ const KeyboardAwareScrollViewComponent = ({ navigation }) => {
       const data = await response.json();
       if (response.ok) {
         const userId = data.userid;
+        await AsyncStorage.setItem("number", mobileNumber);
         navigation.replace("OtpLogin", { userId });
       } else {
         Alert.alert("Error", data.error);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, ActivityIndicator,Platform, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons'; // Importing icons from expo
 
@@ -79,29 +79,7 @@ const MyBookings = () => {
     <Text style={styles.value}> {item.hospital.hospitalName.charAt(0).toUpperCase() + item.hospital.hospitalName.slice(1)}</Text>
   </View>
 )}
-        {/* <>
-          {item.doctor && (
-            <View style={styles.infoRow}>
-              <MaterialIcons name="person" size={20} color="#2BB673" />
-              <Text style={styles.label}>Doctor Name:</Text>
-              <Text style={styles.value}>{item.doctor.name}</Text>
-            </View>
-          )}
-          {item.test && (
-            <View style={styles.infoRow}>
-              <MaterialIcons name="assignment" size={20} color="#2BB673" />
-              <Text style={styles.label}>Test Name:</Text>
-              <Text style={styles.value}>{item.test.name}</Text>
-            </View>
-          )}
-          {item.hospital && (
-            <View style={styles.infoRow}>
-              <MaterialIcons name="local-hospital" size={20} color="#2BB673" />
-              <Text style={styles.label}>Hospital Name:</Text>
-              <Text style={styles.value}>{item.hospital.hospitalName}</Text>
-            </View>
-          )}
-        </> */}
+     
         <View style={styles.infoRow}>
           <MaterialIcons name="phone" size={20} color="#2BB673" />
           <Text style={styles.label}>Contact:</Text>
@@ -117,6 +95,7 @@ const MyBookings = () => {
           <Text style={styles.label}>Time:</Text>
           <Text style={styles.value}>{item.booking.time}</Text>
         </View>
+        <Text>Booked on :{item.booking.bookedOn.split("T")[0]}</Text>
       </View>
     </View>
   );
@@ -156,6 +135,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
+    paddingTop:Platform.OS==='ios'?0:30
   },
   loadingContainer: {
     flex: 1,
