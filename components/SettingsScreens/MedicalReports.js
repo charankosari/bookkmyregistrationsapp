@@ -75,8 +75,34 @@ const MedicalReports = ({ navigation }) => {
           quality: 1,
         });
       }
-      if (result.canceled) return;
-
+  
+      if (result.canceled) {
+        setUploadingFile(false);
+        return;
+      }
+  
+      
+      if (type === 'file') {
+        fileSize = result.assets[0].size;
+        if (fileSize > 2 * 1024 * 1024) {
+          Alert.alert("File size exceeds 2MB. Please select a smaller file.");
+          setUploadingFile(false);
+          return;
+        }
+        uri = asset.uri;
+        name = asset.name;
+        mimeType = asset.mimeType;
+      } else {
+        fileSize = result.assets[0].fileSize;
+        if (fileSize > 2 * 1024 * 1024) {
+          Alert.alert("Image size exceeds 2MB. Please select a smaller image.");
+          setUploadingFile(false);
+          return;
+        }
+        uri = asset.uri;
+        name = asset.fileName;
+        mimeType = asset.mimeType;
+      }
       const formData = new FormData();
       const asset = result.assets[0];
       let uri, name, mimeType;
@@ -94,31 +120,30 @@ const MedicalReports = ({ navigation }) => {
         name: name,
         type: mimeType,
       });
-      setModalVisible(false)
-      setFetching(true)
+      setModalVisible(false);
+      setFetching(true);
       const response = await fetch('https://server.bookmyappointments.in/api/bma/upload', {
         method: 'POST',
         body: formData,
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization':` Bearer ${jwtToken}`,
+          'Authorization': `Bearer ${jwtToken}`,
         },
       });
-
+  
       if (response.ok) {
         fetchFiles(jwtToken);
         handleCloseModal();
-        
       } else {
         Alert.alert('Upload failed', 'Please try again.');
       }
     } catch (error) {
-      console.log(result)
+      console.log(result);
       console.error('Error uploading file:', error);
       Alert.alert('Error', 'An error occurred. Please try again.');
     } finally {
       setUploadingFile(false);
-      setFetching(false)
+      setFetching(false);
     }
   };
 
