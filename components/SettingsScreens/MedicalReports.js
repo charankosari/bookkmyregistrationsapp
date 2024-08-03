@@ -89,9 +89,9 @@ const MedicalReports = ({ navigation }) => {
           setUploadingFile(false);
           return;
         }
-        uri = asset.uri;
-        name = asset.name;
-        mimeType = asset.mimeType;
+        uri = result.assets[0].uri;
+        name = result.assets[0].name;
+        mimeType = result.assets[0].mimeType;
       } else {
         fileSize = result.assets[0].fileSize;
         if (fileSize > 2 * 1024 * 1024) {
@@ -99,9 +99,10 @@ const MedicalReports = ({ navigation }) => {
           setUploadingFile(false);
           return;
         }
-        uri = asset.uri;
-        name = asset.fileName;
-        mimeType = asset.mimeType;
+    
+        uri = result.assets[0].uri;
+        name = result.assets[0].fileName;
+        mimeType = result.assets[0].mimeType;
       }
       const formData = new FormData();
       const asset = result.assets[0];
@@ -291,18 +292,19 @@ const MedicalReports = ({ navigation }) => {
           <View style={styles.deleteConfirmationText}>
             <Text>Are you sure you want to delete this file?</Text>
             <View style={styles.deleteConfirmationButtons}>
+            <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setDeleteConfirmation(null)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.confirmButton}
                 onPress={() => handleDelete(deleteConfirmation)}
               >
                 <Text style={styles.confirmButtonText}>Confirm</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setDeleteConfirmation(null)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
+            
             </View>
           </View>
         </View>
@@ -457,6 +459,7 @@ const styles = StyleSheet.create({
   deleteConfirmationButtons: {
     flexDirection: 'row',
     marginTop: 20,
+    gap:20,
     justifyContent:'center'
   },
   confirmButton: {

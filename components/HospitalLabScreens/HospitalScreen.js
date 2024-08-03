@@ -52,11 +52,10 @@ export default function App({ navigation }) {
         const data = await response.json();
         if (response.ok) {
           const hospitalsWithRole = data.hospitals.filter(
-            (hospital) => hospital.role === "hospital"
+            (hospital) => hospital.role === "hospital" && hospital.doctors?.length > 0
           );
           setHospitals(hospitalsWithRole);
           setFilteredHospitals(hospitalsWithRole);
-
           const categoriesSet = new Set();
           hospitalsWithRole.forEach((hospital) => {
             hospital.category.forEach((cat) => {
@@ -168,7 +167,6 @@ export default function App({ navigation }) {
   };
 
   const handleSearchSubmit = () => {
-    console.log("Search Query:", searchQuery);
   };
 
   const handleOptionPress = (option) => {
@@ -188,7 +186,8 @@ export default function App({ navigation }) {
   const filteredOptions = hyderabadCities.filter((option) =>
     option.name.toLowerCase().includes(searchText.toLowerCase())
   );
-  console.log(filteredHospitals)
+  console.log(filteredHospitals[0].doctors)
+  
   const HospitalContainer = ({ hospital }) => (
     <TouchableOpacity
       onPress={() => {
