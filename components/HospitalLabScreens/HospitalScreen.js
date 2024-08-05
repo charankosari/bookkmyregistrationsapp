@@ -41,40 +41,70 @@ export default function App({ navigation }) {
   const [filteredHospitals, setFilteredHospitals] = useState(hospitals);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
-
-  useEffect(() => {
-    const fetchHospitals = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(
-          "https://server.bookmyappointments.in/api/bma/hospital/admin/getallhospitals"
-        );
-        const data = await response.json();
-        if (response.ok) {
-          const hospitalsWithRole = data.hospitals.filter(
-            (hospital) => hospital.role === "hospital" && hospital.doctors?.length > 0
-          );
-          setHospitals(hospitalsWithRole);
-          setFilteredHospitals(hospitalsWithRole);
-          const categoriesSet = new Set();
-          hospitalsWithRole.forEach((hospital) => {
-            hospital.category.forEach((cat) => {
-              categoriesSet.add(cat.types);
-            });
-          });
-          setCategories(Array.from(categoriesSet));
-        } else {
-          Alert.alert("Error", "Failed to fetch hospitals data");
-        }
-      } catch (error) {
-        console.error("Error fetching hospitals data:", error);
-      } finally {
-        setLoading(false);
+  const processHospitals = (data) => {
+    const doctorMap = new Map();
+    const allSpecialists = new Set();
+    data.c.forEach((doctorData) => {
+      const doctor = doctorData.doctor;
+      const hasBookings = Object.keys(doctor.bookingsids || {}).length > 0;
+      if (hasBookings) {
+        doctorMap.set(doctor._id, doctor);
+        allSpecialists.add(doctor.specialist)
       }
-    };
+    });
+    
+    const updatedHospitals = data.hospitals
+      .filter(hospital => hospital.role === "hospital")
+      .map(hospital => {
+        const updatedDoctors = hospital.doctors
+          .map(doc => {
+            const doctor = doctorMap.get(doc.doctorid);
+            return {
+              ...doc,
+              doctor: doctor || null
+            };
+          })
+          .filter(doc => doc.doctor !== null);
+        const updatedCategories = Array.from(new Set([ ...allSpecialists]))
+          .map(specialist => ({ types: specialist }));
+        return updatedDoctors.length > 0
+          ? {
+              ...hospital,
+              doctors: updatedDoctors,
+              category: updatedCategories,
+            }
+          : null;
+      })
+      .filter(hospital => hospital !== null);
+      setCategories(Array.from(allSpecialists));
 
+    return updatedHospitals;
+  };
+  const fetchHospitals = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        "https://server.bookmyappointments.in/api/bma/hospital/admin/getallhospitalsrem"
+      );
+      const data = await response.json();
+      if (response.ok) {
+        const processedHospitals = processHospitals(data);
+        setHospitals(processedHospitals);
+        setFilteredHospitals(processedHospitals);
+        
+      } else {
+        Alert.alert("Error", "Failed to fetch hospitals data");
+      }
+    } catch (error) {
+      console.error("Error fetching hospitals data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
     fetchHospitals();
   }, []);
+  
 
   const hyderabadCities = [
     { id: 0, name: "None" },
@@ -128,43 +158,61 @@ export default function App({ navigation }) {
 
   const handleSearch = (text) => {
     setSearchQuery(text);
-    applyFilters(text, selectedCategory);
+    applyFilters(text, selectedCategory,location);
   };
 
   const handleCategoryChange = (category) => {
     const newCategory = category === selectedCategory ? null : category;
     setSelectedCategory(newCategory);
-    applyFilters(searchQuery, newCategory);
+    applyFilters(searchQuery, newCategory,location);
   };
-
-  const applyFilters = (text, category) => {
+  const applyFilters = (text, categories, location) => {
     let filtered = hospitals;
-    if (text.trim() !== "") {
+    const lowercasedText = text?.trim().toLowerCase() || "";
+    const safeCategories = Array.isArray(categories) ? categories : [];
+    const safeLocation = (typeof location === 'string' ? location.trim().toLowerCase() : '');
+
+
+    if (lowercasedText) {
       filtered = filtered.filter((hospital) => {
-        const { hospitalName, address, category: hospitalCategory } = hospital;
+        const { hospitalName = "", address = [], category = [] } = hospital;
         const isCategoryMatch =
-          Array.isArray(hospitalCategory) &&
-          hospitalCategory.some(
+          Array.isArray(category) &&
+          category.some(
             (cat) =>
               typeof cat === "object" &&
               cat.types &&
-              cat.types.toLowerCase().includes(text.toLowerCase())
+              cat.types.toLowerCase().includes(lowercasedText)
           );
-
+  
         return (
-          hospitalName.toLowerCase().includes(text.toLowerCase()) ||
-          address[0].city.toLowerCase().includes(text.toLowerCase()) ||
+          hospitalName.toLowerCase().includes(lowercasedText) ||
+          (address[0]?.city && address[0].city.toLowerCase().includes(lowercasedText)) ||
           isCategoryMatch
         );
       });
     }
-    if (category) {
+  
+    // Filter by categories
+    if (safeCategories.length > 0) {
       filtered = filtered.filter((hospital) =>
-        hospital.category.some((cat) => cat.types === category)
+        hospital.category?.some((cat) => safeCategories.includes(cat.types)) ?? false
       );
     }
+  
+    // Filter by location
+    if (safeLocation && safeLocation !== "set location" && safeLocation !== "none") {
+      filtered = filtered.filter(
+        (hospital) => hospital.address[0]?.city?.toLowerCase() === safeLocation
+      );
+    }
+  
     setFilteredHospitals(filtered);
   };
+  
+  
+  
+  
 
   const handleSearchSubmit = () => {
   };
@@ -172,8 +220,10 @@ export default function App({ navigation }) {
   const handleOptionPress = (option) => {
     if (option.name) {
       setSelectedLocation(option.name);
+      applyFilters(searchQuery, selectedCategory, option.name);
     } else {
       setSelectedLocation(option);
+      applyFilters(searchQuery, selectedCategory, option);
     }
     setSearchText("");
     setModalVisible(false);
@@ -186,7 +236,6 @@ export default function App({ navigation }) {
   const filteredOptions = hyderabadCities.filter((option) =>
     option.name.toLowerCase().includes(searchText.toLowerCase())
   );
-  console.log(filteredHospitals[0].doctors)
   
   const HospitalContainer = ({ hospital }) => (
     <TouchableOpacity
@@ -442,58 +491,63 @@ export default function App({ navigation }) {
         </SafeAreaView>
       </Modal>
 
+   
       {selectedLocation === "Set Location" || selectedLocation === "None" ? (
-        filteredHospitals.length > 0 ? (
-          filteredHospitals.map((hospital, index) => (
-            <HospitalContainer key={index} hospital={hospital} />
-          ))
-        ) : (
-          <Text
-            style={{
-              textAlign: "center",
-              marginTop: 5,
-              fontSize: 16,
-              color: "red",
-              marginBottom: 10,
-            }}
-          >
-            No hospitals found for your search.
-          </Text>
-        )
-      ) : filteredHospitals.filter(
-          (hospital) => hospital.address[0].city === selectedLocation
-        ).length > 0 ? (
-        filteredHospitals
-          .filter((hospital) => hospital.address[0].city === selectedLocation)
-          .map((hospital, index) => (
-            <HospitalContainer key={index} hospital={hospital} />
-          ))
-      ) : (
-        <>
-          <Text
-            style={{
-              textAlign: "center",
-              marginTop: 5,
-              fontSize: 16,
-              color: "red",
-              marginBottom: 15,
-            }}
-          >
-            Sorry, we cannot find any hospitals in your area.
-          </Text>
-          <View
-            style={{
-              borderBottomColor: "#495057",
-              borderBottomWidth: 2,
-              marginHorizontal: 10,
-              marginBottom: 15,
-            }}
-          />
-          {filteredHospitals.map((hospital, index) => (
-            <HospitalContainer key={index} hospital={hospital} />
-          ))}
-        </>
-      )}
+  filteredHospitals.length > 0 ? (
+    filteredHospitals.map((hospital, index) => (
+      <HospitalContainer key={index} hospital={hospital} />
+    ))
+  ) : (
+    <Text
+      style={{
+        textAlign: "center",
+        marginTop: 5,
+        fontSize: 16,
+        color: "red",
+        marginBottom: 10,
+      }}
+    >
+      No hospitals found for your search.
+    </Text>
+  )
+) : (
+  filteredHospitals.filter(
+    (hospital) => hospital.address[0].city === selectedLocation
+  ).length > 0 ? (
+    filteredHospitals
+      .filter((hospital) => hospital.address[0].city === selectedLocation)
+      .map((hospital, index) => (
+        <HospitalContainer key={index} hospital={hospital} />
+      ))
+  ) : (
+    <>
+      <Text
+        style={{
+          textAlign: "center",
+          marginTop: 5,
+          fontSize: 16,
+          color: "red",
+          marginBottom: 15,
+        }}
+      >
+        Sorry, we cannot find any hospitals in your area.
+      </Text>
+      <View
+        style={{
+          borderBottomColor: "#495057",
+          borderBottomWidth: 2,
+          marginHorizontal: 10,
+          marginBottom: 15,
+        }}
+      />
+      {filteredHospitals.map((hospital, index) => (
+        <HospitalContainer key={index} hospital={hospital} />
+      ))}
+    </>
+  )
+)}
+
+
     </View>
   );
 }

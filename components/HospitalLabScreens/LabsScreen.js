@@ -45,40 +45,71 @@ export default function App({ navigation }) {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  useEffect(() => {
-    const fetchHospitals = async () => {
-      try {
-        const response = await fetch(
-          "https://server.bookmyappointments.in/api/bma/hospital/admin/getallhospitals"
-        );
-        const data = await response.json();
-        if (response.ok) {
-          const hospitalsWithRole = data.hospitals.filter(
-            (hospital) => hospital.role === "lab"
-          );
-          setHospitals(hospitalsWithRole);
-          setFilteredHospitals(hospitalsWithRole);
 
-          const categoriesSet = new Set();
-          hospitalsWithRole.forEach((hospital) => {
-            hospital.category.forEach((cat) => {
-              categoriesSet.add(cat.types);
-            });
-          });
-          setCategories(Array.from(categoriesSet));
-        } else {
-          Alert.alert("Error", "Failed to fetch hospitals data");
-        }
-      } catch (error) {
-        console.error("Error fetching hospitals data:", error);
-      } finally {
-        setLoading(false);
+
+  const processHospitals = (data) => {
+    const testMap = new Map();
+    const allSpecialists = new Set();
+    data.d.forEach((testData) => {
+      const test = testData.test;
+      const hasBookings = Object.keys(test.bookingsids || {}).length > 0;
+      if (hasBookings) {
+        testMap.set(test._id, test);
+        allSpecialists.add(test.name)
       }
-    };
+    });
+    
+    const updatedHospitals = data.hospitals
+      .filter(hospital => hospital.role === "lab")
+      .map(hospital => {
+        const updatedTests = hospital.tests
+          .map(tes => {
+            const test = testMap.get(tes.testid);
+            return {
+              ...test,
+              test: test || null
+            };
+          })
+          .filter(doc => doc.test !== null);
+        const updatedCategories = Array.from(new Set([ ...allSpecialists]))
+          .map(specialist => ({ types: specialist }));
+        return updatedTests.length > 0
+          ? {
+              ...hospital,
+              doctors: updatedTests,
+              category: updatedCategories,
+            }
+          : null;
+      })
+      .filter(hospital => hospital !== null);
+      setCategories(Array.from(allSpecialists));
 
+    return updatedHospitals;
+  };
+  const fetchHospitals = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        "https://server.bookmyappointments.in/api/bma/hospital/admin/getallhospitalsrem"
+      );
+      const data = await response.json();
+      if (response.ok) {
+        const processedHospitals = processHospitals(data);
+        setHospitals(processedHospitals);
+        setFilteredHospitals(processedHospitals);
+        
+      } else {
+        Alert.alert("Error", "Failed to fetch hospitals data");
+      }
+    } catch (error) {
+      console.error("Error fetching hospitals data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
     fetchHospitals();
   }, []);
-
 
   const hyderabadCities = [
     { id: 0, name: "None" },
@@ -148,10 +179,12 @@ export default function App({ navigation }) {
 
   const applyFilters = (text, categories, location) => {
     let filtered = hospitals;
-
+  
+    // Filter by text
     if (text.trim() !== "") {
       filtered = filtered.filter((hospital) => {
         const { hospitalName, address, category } = hospital;
+  
         const isCategoryMatch =
           Array.isArray(category) &&
           category.some(
@@ -160,32 +193,35 @@ export default function App({ navigation }) {
               cat.types &&
               cat.types.toLowerCase().includes(text.toLowerCase())
           );
-
+  
         return (
           hospitalName.toLowerCase().includes(text.toLowerCase()) ||
-          address[0].city.toLowerCase().includes(text.toLowerCase()) ||
+          (address[0]?.city && address[0].city.toLowerCase().includes(text.toLowerCase())) ||
           isCategoryMatch
         );
       });
     }
-
+  
+    // Filter by categories
     if (categories.length > 0) {
       filtered = filtered.filter((hospital) =>
         hospital.category.some((cat) => categories.includes(cat.types))
       );
     }
-
-    if (location !== "Set Location" && location !== "None") {
+  
+    // Filter by location
+    if (location && location !== "Set Location" && location !== "None") {
       filtered = filtered.filter(
-        (hospital) => hospital.address[0].city === location
+        (hospital) => hospital.address[0]?.city.toLowerCase() === location.toLowerCase()
       );
     }
-
+  
     setFilteredHospitals(filtered);
   };
+  
+  
 
   const handleSearchSubmit = () => {
-    console.log("Search Query:", searchQuery);
   };
 
   const handleOptionPress = (option) => {
@@ -207,7 +243,7 @@ export default function App({ navigation }) {
   const filteredOptions = hyderabadCities.filter((option) =>
     option.name.toLowerCase().includes(searchText.toLowerCase())
   );
-console.log(filteredHospitals)
+
   const HospitalContainer = ({ hospital }) => (
     <TouchableOpacity
       onPress={() => {
